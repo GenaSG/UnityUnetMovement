@@ -79,6 +79,7 @@ public class NetworkMovement : NetworkBehaviour {
 					}
 				}else{
 					if(_inputs.pitch != 0 || _inputs.yaw != 0){
+						Debug.Log("sending rotation");
 						Cmd_RotationInputs(_inputs.pitch,_inputs.yaw,_inputs.timeStamp);
 					}
 				}
@@ -221,20 +222,31 @@ public class NetworkMovement : NetworkBehaviour {
 			//Update client's position and rotation with ones from server 
 			transform.rotation = results.rotation;
 			transform.position = results.position;
+			int foundIndex = -1;
 			//Search recieved time stamp in client's inputs list
 			for(int index = 0; index < _inputsList.Count; index++){
 				//If time stamp found run through all inputs starting from needed time stamp 
-				if(_inputsList[index].timeStamp == results.timeStamp){
-					for(int subIndex = (index+1); subIndex < _inputsList.Count;subIndex++){
-						Rotate(_inputsList[subIndex].pitch,_inputsList[subIndex].yaw);
-						Move(_inputsList[subIndex].forward,_inputsList[subIndex].sides);
-					}
-					//Remove all inputs before time stamp
-					int targetCount = _inputsList.Count - index;
-					while(_inputsList.Count > targetCount){
-						_inputsList.RemoveAt(0);
-					}
+				if(_inputsList[index].timeStamp > results.timeStamp){
+					foundIndex = index;
+					break;
 				}
+			}
+			if(foundIndex ==-1){
+				//Clear Inputs list if no needed records found 
+				while(_inputsList.Count != 0){
+					_inputsList.RemoveAt(0);
+				}
+				return;
+			}
+			//Replay recorded inputs
+			for(int subIndex = foundIndex; subIndex < _inputsList.Count;subIndex++){
+				Rotate(_inputsList[subIndex].pitch,_inputsList[subIndex].yaw);
+				Move(_inputsList[subIndex].forward,_inputsList[subIndex].sides);
+			}
+			//Remove all inputs before time stamp
+			int targetCount = _inputsList.Count - foundIndex;
+			while(_inputsList.Count > targetCount){
+				_inputsList.RemoveAt(0);
 			}
 		}
 	}
