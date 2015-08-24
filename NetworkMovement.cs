@@ -65,7 +65,7 @@ public class NetworkMovement : NetworkBehaviour {
 			}else{
 				//Owner client. Non-authoritative part
 				//Add inputs to the inputs list so they could be used during reconciliation process
-				if(((_inputs.forward != 0 || _inputs.sides != 0) || (_inputs.pitch != 0 || _inputs.yaw != 0)) && _inputsList.Count <= 100){
+				if(((_inputs.forward != 0 || _inputs.sides != 0) || (!CheckIfZero(_inputs.pitch) || !CheckIfZero(_inputs.yaw))) && _inputsList.Count <= 100){
 					_inputsList.Add(_inputs);
 				}
 				//Sending inputs to the server
@@ -79,7 +79,6 @@ public class NetworkMovement : NetworkBehaviour {
 					}
 				}else{
 					if(_inputs.pitch != 0 || _inputs.yaw != 0){
-						Debug.Log("sending rotation");
 						Cmd_RotationInputs(_inputs.pitch,_inputs.yaw,_inputs.timeStamp);
 					}
 				}
@@ -136,6 +135,14 @@ public class NetworkMovement : NetworkBehaviour {
 			}
 		}
 	}
+	//Function for checking in float is zero
+	bool CheckIfZero(float input){
+		if (input > 0 || input < 0) {
+			return false;
+		}
+		return true;
+	}
+
 	//Only rotation inputs sent 
 	[Command(channel = 0)]
 	void Cmd_RotationInputs(float pitch,float yaw,float timeStamp){
