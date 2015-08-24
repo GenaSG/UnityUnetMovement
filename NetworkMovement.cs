@@ -6,8 +6,8 @@ using System.Collections.Generic;
 //Author:gennadiy.shvetsov@gmail.com
 //QoS channels used:
 //channel #0: Reliable Sequenced
-//channel #1: State Update
-[NetworkSettings(channel=1,sendInterval=0.05f)]
+//channel #1: Unreliable
+[NetworkSettings(channel=0,sendInterval=0.05f)]
 public class NetworkMovement : NetworkBehaviour {
 	//This struct would be used to collect player inputs
 	public struct Inputs			
@@ -45,40 +45,45 @@ public class NetworkMovement : NetworkBehaviour {
 	private Vector3 _targetPosition;
 	private Quaternion _startRotation;
 	private Quaternion _targetRotation;
+	private float _lastUpdateTime = 0;
 	
 	void FixedUpdate(){
 		if (isLocalPlayer) {
 			//Getting clients inputs
 			GetInputs();
 			//Client side prediction for non-authoritative client or plane movement and rotation for listen server/host
+			Vector3 lastPosition = transform.position;
+			Quaternion lastRotation = transform.rotation;
 			Rotate(_inputs.pitch,_inputs.yaw);
 			Move(_inputs.forward,_inputs.sides);
 			if(hasAuthority){
 				//Listen server/host part
 				//Sending results to other clients(state sync)
-				Results results;
-				results.rotation = transform.rotation;
-				results.position = transform.position;
-				results.timeStamp = _inputs.timeStamp;
-				//Struct need to be fully rewritten to count as dirty 
-				_results = results;
+				if(Vector3.Distance(transform.position,lastPosition) > 0 || Quaternion.Angle(transform.rotation,lastRotation) > 0){
+					Results results;
+					results.rotation = transform.rotation;
+					results.position = transform.position;
+					results.timeStamp = _inputs.timeStamp;
+					//Struct need to be fully rewritten to count as dirty 
+					_results = results;
+				}
 			}else{
 				//Owner client. Non-authoritative part
 				//Add inputs to the inputs list so they could be used during reconciliation process
-				if(((_inputs.forward != 0 || _inputs.sides != 0) || (!CheckIfZero(_inputs.pitch) || !CheckIfZero(_inputs.yaw))) && _inputsList.Count <= 100){
+				if(((_inputs.forward != 0 || _inputs.sides != 0) || (_inputs.pitch !=0 || _inputs.yaw !=0 )) && _inputsList.Count <= 100){
 					_inputsList.Add(_inputs);
 				}
 				//Sending inputs to the server
 				//Unfortunately there is now method overload for [Command] so I need to write several almost similar functions
 				//This one is needed to save on network traffic
 				if(_inputs.forward != 0 || _inputs.sides != 0){
-					if(_inputs.pitch != 0 || _inputs.yaw != 0){
+					if(_inputs.pitch !=0 || _inputs.yaw != 0){
 						Cmd_MovementRotationInputs(_inputs.forward,_inputs.sides,_inputs.pitch,_inputs.yaw,_inputs.timeStamp);
 					}else{
 						Cmd_MovementInputs(_inputs.forward,_inputs.sides,_inputs.timeStamp);
 					}
 				}else{
-					if(_inputs.pitch != 0 || _inputs.yaw != 0){
+					if(_inputs.pitch !=0 || _inputs.yaw !=0){
 						Cmd_RotationInputs(_inputs.pitch,_inputs.yaw,_inputs.timeStamp);
 					}
 				}
@@ -94,14 +99,19 @@ public class NetworkMovement : NetworkBehaviour {
 				//Move and rotate part. Nothing interesting here
 				Inputs inputs = _inputsList[0];
 				_inputsList.RemoveAt(0);
+
 				Rotate(inputs.pitch,inputs.yaw);
 				Move(inputs.forward,inputs.sides);
 				//Sending results to other clients(state sync)
-				Results results;
-				results.rotation = transform.rotation;
-				results.position = transform.position;
-				results.timeStamp = inputs.timeStamp;
-				_results = results;
+				Vector3 lastPosition = transform.position;
+				Quaternion lastRotation = transform.rotation;
+				if(Vector3.Distance(transform.position,lastPosition) > 0 || Quaternion.Angle(transform.rotation,lastRotation) > 0){
+					Results results;
+					results.rotation = transform.rotation;
+					results.position = transform.position;
+					results.timeStamp = inputs.timeStamp;
+					_results = results;
+				}
 			}else{
 				//Non-owner client a.k.a. dummy client
 				//there should be at least two records in the results list so it would be possible to interpolate between them in case if there would be some dropped packed or latency spike
@@ -134,13 +144,6 @@ public class NetworkMovement : NetworkBehaviour {
 				}
 			}
 		}
-	}
-	//Function for checking in float is zero
-	bool CheckIfZero(float input){
-		if (input > 0 || input < 0) {
-			return false;
-		}
-		return true;
 	}
 
 	//Only rotation inputs sent 
@@ -216,6 +219,11 @@ public class NetworkMovement : NetworkBehaviour {
 	//Updating Clients with server states
 	[ClientCallback]
 	void RecieveResults(Results results){
+		//Discard out of order results
+		if (results.timeStamp <= _lastUpdateTime) {
+			return;
+		}
+		_lastUpdateTime = results.timeStamp;
 		//Non-owner client
 		if (!isLocalPlayer && !hasAuthority) {
 			//Getting data step. Needed for correct interpolation 
