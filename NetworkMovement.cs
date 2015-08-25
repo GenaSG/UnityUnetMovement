@@ -99,12 +99,11 @@ public class NetworkMovement : NetworkBehaviour {
 				//Move and rotate part. Nothing interesting here
 				Inputs inputs = _inputsList[0];
 				_inputsList.RemoveAt(0);
-
+				Vector3 lastPosition = transform.position;
+				Quaternion lastRotation = transform.rotation;
 				Rotate(inputs.pitch,inputs.yaw);
 				Move(inputs.forward,inputs.sides);
 				//Sending results to other clients(state sync)
-				Vector3 lastPosition = transform.position;
-				Quaternion lastRotation = transform.rotation;
 				if(Vector3.Distance(transform.position,lastPosition) > 0 || Quaternion.Angle(transform.rotation,lastRotation) > 0){
 					Results results;
 					results.rotation = transform.rotation;
