@@ -12,8 +12,8 @@ public class NetworkMovement : NetworkBehaviour {
 	//This struct would be used to collect player inputs
 	public struct Inputs			
 	{
-		public sbyte forward;
-		public sbyte sides;
+		public float forward;
+		public float sides;
 		public float yaw;
 		public float pitch;
 		public float timeStamp;
@@ -46,23 +46,29 @@ public class NetworkMovement : NetworkBehaviour {
 	private Quaternion _startRotation;
 	private Quaternion _targetRotation;
 	private float _lastUpdateTime = 0;
+
+	private Vector3 position;
+	private Quaternion rotation;
+
+
 	
 	void FixedUpdate(){
 		if (isLocalPlayer) {
 			//Getting clients inputs
-			GetInputs();
+			GetInputs(ref _inputs);
+			_inputs.timeStamp = Time.time;
 			//Client side prediction for non-authoritative client or plane movement and rotation for listen server/host
-			Vector3 lastPosition = transform.position;
-			Quaternion lastRotation = transform.rotation;
-			Rotate(_inputs.pitch,_inputs.yaw);
-			Move(_inputs.forward,_inputs.sides);
+			Vector3 lastPosition = position;
+			Quaternion lastRotation = rotation;
+			rotation = Rotate(_inputs.pitch,_inputs.yaw,rotation);
+			position = Move(_inputs.forward,_inputs.sides,position);
 			if(hasAuthority){
 				//Listen server/host part
 				//Sending results to other clients(state sync)
-				if(Vector3.Distance(transform.position,lastPosition) > 0 || Quaternion.Angle(transform.rotation,lastRotation) > 0){
+				if(Vector3.Distance(position,lastPosition) > 0 || Quaternion.Angle(rotation,lastRotation) > 0){
 					Results results;
-					results.rotation = transform.rotation;
-					results.position = transform.position;
+					results.rotation = rotation;
+					results.position = position;
 					results.timeStamp = _inputs.timeStamp;
 					//Struct need to be fully rewritten to count as dirty 
 					_results = results;
@@ -99,15 +105,15 @@ public class NetworkMovement : NetworkBehaviour {
 				//Move and rotate part. Nothing interesting here
 				Inputs inputs = _inputsList[0];
 				_inputsList.RemoveAt(0);
-				Vector3 lastPosition = transform.position;
-				Quaternion lastRotation = transform.rotation;
-				Rotate(inputs.pitch,inputs.yaw);
-				Move(inputs.forward,inputs.sides);
+				Vector3 lastPosition = position;
+				Quaternion lastRotation = rotation;
+				rotation = Rotate(inputs.pitch,inputs.yaw,rotation);
+				position = Move(inputs.forward,inputs.sides,position);
 				//Sending results to other clients(state sync)
-				if(Vector3.Distance(transform.position,lastPosition) > 0 || Quaternion.Angle(transform.rotation,lastRotation) > 0){
+				if(Vector3.Distance(position,lastPosition) > 0 || Quaternion.Angle(rotation,lastRotation) > 0){
 					Results results;
-					results.rotation = transform.rotation;
-					results.position = transform.position;
+					results.rotation = rotation;
+					results.position = position;
 					results.timeStamp = inputs.timeStamp;
 					_results = results;
 				}
@@ -130,13 +136,15 @@ public class NetworkMovement : NetworkBehaviour {
 					_targetPosition = _resultsList[0].position;
 					_targetRotation = _resultsList[0].rotation;
 
-					_startPosition = transform.position;
-					_startRotation = transform.rotation;
+					_startPosition = position;
+					_startRotation = rotation;
 
 					_resultsList.RemoveAt(0);
 				}
-				transform.rotation = Quaternion.Slerp(_startRotation,_targetRotation,_dataIndex * _dataStep);
-				transform.position = Vector3.Lerp(_startPosition,_targetPosition,_dataIndex * _dataStep);
+				rotation = Quaternion.Slerp(_startRotation,_targetRotation,_dataIndex * _dataStep);
+				position = Vector3.Lerp(_startPosition,_targetPosition,_dataIndex * _dataStep);
+				UpdateRotation(rotation);
+				UpdatePosition(position);
 				_dataIndex++;
 				if(_dataIndex * _dataStep > 1){
 					_dataIndex = 0;
@@ -160,11 +168,11 @@ public class NetworkMovement : NetworkBehaviour {
 	}
 	//Rotation and movement inputs sent 
 	[Command(channel = 0)]
-	void Cmd_MovementRotationInputs(sbyte forward, sbyte sides,float pitch,float yaw,float timeStamp){
+	void Cmd_MovementRotationInputs(float forward, float sides,float pitch,float yaw,float timeStamp){
 		if (hasAuthority && !isLocalPlayer) {
 			Inputs inputs;
-			inputs.forward = (sbyte)Mathf.Clamp(forward,-1,1);
-			inputs.sides = (sbyte)Mathf.Clamp(sides,-1,1);
+			inputs.forward = Mathf.Clamp(forward,-1,1);
+			inputs.sides = Mathf.Clamp(sides,-1,1);
 			inputs.pitch = pitch;
 			inputs.yaw = yaw;
 			inputs.timeStamp = timeStamp;
@@ -174,11 +182,11 @@ public class NetworkMovement : NetworkBehaviour {
 
 	//Only movements inputs sent
 	[Command(channel = 0)]
-	void Cmd_MovementInputs(sbyte forward, sbyte sides,float timeStamp){
+	void Cmd_MovementInputs(float forward, float sides,float timeStamp){
 		if (hasAuthority && !isLocalPlayer) {
 			Inputs inputs;
-			inputs.forward = (sbyte)Mathf.Clamp(forward,-1,1);
-			inputs.sides = (sbyte)Mathf.Clamp(sides,-1,1);
+			inputs.forward = Mathf.Clamp(forward,-1,1);
+			inputs.sides = Mathf.Clamp(sides,-1,1);
 			inputs.pitch = 0;
 			inputs.yaw = 0;
 			inputs.timeStamp = timeStamp;
@@ -186,12 +194,12 @@ public class NetworkMovement : NetworkBehaviour {
 		}
 	}
 	//Self explanatory
-	void GetInputs(){
-		_inputs.sides = RoundToLargest(Input.GetAxis ("Horizontal"));
-		_inputs.forward = RoundToLargest(Input.GetAxis ("Vertical"));
-		_inputs.yaw = -Input.GetAxis("Mouse Y") * 100;
-		_inputs.pitch = Input.GetAxis("Mouse X") * 100;
-		_inputs.timeStamp = Time.time;
+	//Can be changed in inherited class
+	public virtual void GetInputs(ref Inputs inputs){
+		inputs.sides = RoundToLargest(Input.GetAxis ("Horizontal"));
+		inputs.forward = RoundToLargest(Input.GetAxis ("Vertical"));
+		inputs.yaw = -Input.GetAxis("Mouse Y") * 100;
+		inputs.pitch = Input.GetAxis("Mouse X") * 100;
 	}
 	
 	sbyte RoundToLargest(float inp){
@@ -203,18 +211,34 @@ public class NetworkMovement : NetworkBehaviour {
 		return 0;
 	}
 
-	void Move(sbyte forward, sbyte sides){
-		transform.Translate (Vector3.ClampMagnitude(new Vector3(sides,0,forward),1) * 3 * Time.fixedDeltaTime);
+	//Next for functions can be changed in inherited class for custom movement and rotation mechanics
+	//So it would be possible to control for example humanoid or vehicle from one script just by changing controlled pawn
+	public virtual void UpdatePosition(Vector3 newPosition){
+		transform.position = newPosition;
 	}
 
-	void Rotate(float pitch, float yaw){
+	public virtual void UpdateRotation(Quaternion newRotation){
+		transform.rotation = newRotation;
+	}
+
+	public virtual Vector3 Move(float forward, float sides,Vector3 current){
+		transform.position = current;
+		transform.Translate (Vector3.ClampMagnitude(new Vector3(sides,0,forward),1) * 3 * Time.fixedDeltaTime);
+		return transform.position;
+	}
+
+	public virtual Quaternion Rotate(float pitch, float yaw, Quaternion current){
+		transform.rotation = current;
 		float mHor = transform.eulerAngles.y + pitch * Time.fixedDeltaTime;
 		float mVert = transform.eulerAngles.x + yaw * Time.fixedDeltaTime;
 		
 		if (mVert > 180)
 			mVert -= 360;
 		transform.rotation = Quaternion.Euler (mVert, mHor, 0);
+		return transform.rotation;
 	}
+
+
 	//Updating Clients with server states
 	[ClientCallback]
 	void RecieveResults(Results results){
@@ -234,8 +258,8 @@ public class NetworkMovement : NetworkBehaviour {
 		//Server client reconciliation process should be executed in order to client's rotation and position with server values but do it without jittering
 		if (isLocalPlayer && !hasAuthority) {
 			//Update client's position and rotation with ones from server 
-			transform.rotation = results.rotation;
-			transform.position = results.position;
+			rotation = results.rotation;
+			position = results.position;
 			int foundIndex = -1;
 			//Search recieved time stamp in client's inputs list
 			for(int index = 0; index < _inputsList.Count; index++){
@@ -254,8 +278,8 @@ public class NetworkMovement : NetworkBehaviour {
 			}
 			//Replay recorded inputs
 			for(int subIndex = foundIndex; subIndex < _inputsList.Count;subIndex++){
-				Rotate(_inputsList[subIndex].pitch,_inputsList[subIndex].yaw);
-				Move(_inputsList[subIndex].forward,_inputsList[subIndex].sides);
+				rotation = Rotate(_inputsList[subIndex].pitch,_inputsList[subIndex].yaw,rotation);
+				position = Move(_inputsList[subIndex].forward,_inputsList[subIndex].sides,position);
 			}
 			//Remove all inputs before time stamp
 			int targetCount = _inputsList.Count - foundIndex;
