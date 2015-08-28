@@ -15,13 +15,17 @@ public class NetworkPawn : NetworkMovement {
 		inputs.yaw = -Input.GetAxis("Mouse Y") * mouseSens;
 		inputs.pitch = Input.GetAxis("Mouse X") * mouseSens;
 		inputs.sprint = Input.GetButton ("Sprint");
+		inputs.crouch = Input.GetButton ("Crouch");
 	}
 
 	public override Vector3 Move (Inputs inputs, Results current)
 	{
 		pawn.position = current.position;
 		float speed = 2;
-		if (inputs.sprint) {
+		if (current.crouching) {
+			speed = 1.5f;
+		}
+		if (current.sprinting) {
 			speed = 3;
 		}
 		pawn.Translate (Vector3.ClampMagnitude(new Vector3(inputs.sides,0,inputs.forward),1) * speed * Time.fixedDeltaTime);

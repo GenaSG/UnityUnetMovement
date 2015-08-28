@@ -17,6 +17,7 @@ public class NetworkMovement : NetworkBehaviour {
 		public float yaw;
 		public float pitch;
 		public bool sprint;
+		public bool crouch;
 		public float timeStamp;
 	}
 	//This struct would be used to collect results of Move and Rotate functions
@@ -25,6 +26,7 @@ public class NetworkMovement : NetworkBehaviour {
 		public Quaternion rotation;
 		public Vector3 position;
 		public bool sprinting;
+		public bool crouching;
 		public float timeStamp;
 	}
 
@@ -69,17 +71,13 @@ public class NetworkMovement : NetworkBehaviour {
 			Vector3 lastPosition = _results.position;
 			Quaternion lastRotation = _results.rotation;
 			_results.rotation = Rotate(_inputs,_results);
+			_results.crouching = Crouch(_inputs,_results);
 			_results.sprinting = Sprint(_inputs,_results);
 			_results.position = Move(_inputs,_results);
 			if(hasAuthority){
 				//Listen server/host part
 				//Sending results to other clients(state sync)
 				if(Vector3.Distance(_results.position,lastPosition) > 0 || Quaternion.Angle(_results.rotation,lastRotation) > 0){
-/*					Results results;
-					results.rotation = _rotation;
-					results.position = _position;
-					results.sprinting = _sprinting;
-					results.timeStamp = _inputs.timeStamp;*/
 					_results.timeStamp = _inputs.timeStamp;
 					//Struct need to be fully rew_inputs.timeStampritten to count as dirty 
 					syncResults = _results;
@@ -95,13 +93,13 @@ public class NetworkMovement : NetworkBehaviour {
 				//This one is needed to save on network traffic
 				if(_inputs.forward != 0 || _inputs.sides != 0){
 					if(_inputs.pitch !=0 || _inputs.yaw != 0){
-						Cmd_MovementRotationInputs(_inputs.forward,_inputs.sides,_inputs.pitch,_inputs.yaw,_inputs.sprint,_inputs.timeStamp);
+						Cmd_MovementRotationInputs(_inputs.forward,_inputs.sides,_inputs.pitch,_inputs.yaw,_inputs.sprint,_inputs.crouch,_inputs.timeStamp);
 					}else{
-						Cmd_MovementInputs(_inputs.forward,_inputs.sides,_inputs.sprint,_inputs.timeStamp);
+						Cmd_MovementInputs(_inputs.forward,_inputs.sides,_inputs.sprint,_inputs.crouch,_inputs.timeStamp);
 					}
 				}else{
 					if(_inputs.pitch !=0 || _inputs.yaw !=0){
-						Cmd_RotationInputs(_inputs.pitch,_inputs.yaw,_inputs.timeStamp);
+						Cmd_RotationInputs(_inputs.pitch,_inputs.yaw,_inputs.crouch,_inputs.timeStamp);
 					}
 				}
 			}
@@ -119,15 +117,11 @@ public class NetworkMovement : NetworkBehaviour {
 				Vector3 lastPosition = _results.position;
 				Quaternion lastRotation = _results.rotation;
 				_results.rotation = Rotate(inputs,_results);
+				_results.crouching = Crouch(inputs,_results);
 				_results.sprinting = Sprint(inputs,_results);
 				_results.position = Move(inputs,_results);
 				//Sending results to other clients(state sync)
 				if(Vector3.Distance(_results.position,lastPosition) > 0 || Quaternion.Angle(_results.rotation,lastRotation) > 0){
-/*					Results results;
-					results.rotation = _rotation;
-					results.position = _position;
-					results.sprinting = _sprinting;
-					results.timeStamp = inputs.timeStamp;*/
 					_results.timeStamp = inputs.timeStamp;
 					syncResults = _results;
 				}
@@ -172,7 +166,7 @@ public class NetworkMovement : NetworkBehaviour {
 
 	//Only rotation inputs sent 
 	[Command(channel = 0)]
-	void Cmd_RotationInputs(float pitch,float yaw,float timeStamp){
+	void Cmd_RotationInputs(float pitch,float yaw,bool crouch,float timeStamp){
 		if (hasAuthority && !isLocalPlayer) {
 			Inputs inputs;
 			inputs.forward = 0;
@@ -180,13 +174,14 @@ public class NetworkMovement : NetworkBehaviour {
 			inputs.pitch = pitch;
 			inputs.yaw = yaw;
 			inputs.sprint = false;
+			inputs.crouch = crouch;
 			inputs.timeStamp = timeStamp;
 			_inputsList.Add(inputs);
 		}
 	}
 	//Rotation and movement inputs sent 
 	[Command(channel = 0)]
-	void Cmd_MovementRotationInputs(float forward, float sides,float pitch,float yaw,bool sprint,float timeStamp){
+	void Cmd_MovementRotationInputs(float forward, float sides,float pitch,float yaw,bool sprint,bool crouch,float timeStamp){
 		if (hasAuthority && !isLocalPlayer) {
 			Inputs inputs;
 			inputs.forward = Mathf.Clamp(forward,-1,1);
@@ -194,6 +189,7 @@ public class NetworkMovement : NetworkBehaviour {
 			inputs.pitch = pitch;
 			inputs.yaw = yaw;
 			inputs.sprint = sprint;
+			inputs.crouch = crouch;
 			inputs.timeStamp = timeStamp;
 			_inputsList.Add(inputs);
 		}
@@ -201,7 +197,7 @@ public class NetworkMovement : NetworkBehaviour {
 
 	//Only movements inputs sent
 	[Command(channel = 0)]
-	void Cmd_MovementInputs(float forward, float sides,bool sprint,float timeStamp){
+	void Cmd_MovementInputs(float forward, float sides,bool sprint,bool crouch,float timeStamp){
 		if (hasAuthority && !isLocalPlayer) {
 			Inputs inputs;
 			inputs.forward = Mathf.Clamp(forward,-1,1);
@@ -209,6 +205,7 @@ public class NetworkMovement : NetworkBehaviour {
 			inputs.pitch = 0;
 			inputs.yaw = 0;
 			inputs.sprint = sprint;
+			inputs.crouch = crouch;
 			inputs.timeStamp = timeStamp;
 			_inputsList.Add(inputs);
 		}
@@ -221,7 +218,7 @@ public class NetworkMovement : NetworkBehaviour {
 		inputs.yaw = -Input.GetAxis("Mouse Y") * 100;
 		inputs.pitch = Input.GetAxis("Mouse X") * 100;
 		inputs.sprint = Input.GetButton ("Sprint");
-		Debug.Log ("Sprinting = " + inputs.sprint );
+		inputs.crouch = Input.GetButton ("Crouch");
 	}
 	
 	sbyte RoundToLargest(float inp){
@@ -233,7 +230,7 @@ public class NetworkMovement : NetworkBehaviour {
 		return 0;
 	}
 
-	//Next for functions can be changed in inherited class for custom movement and rotation mechanics
+	//Next six functions can be changed in inherited class for custom movement and rotation mechanics
 	//So it would be possible to control for example humanoid or vehicle from one script just by changing controlled pawn
 	public virtual void UpdatePosition(Vector3 newPosition){
 		transform.position = newPosition;
@@ -246,6 +243,9 @@ public class NetworkMovement : NetworkBehaviour {
 	public virtual Vector3 Move(Inputs inputs, Results current){
 		transform.position = current.position;
 		float speed = 2;
+		if (current.crouching) {
+			speed = 1.5f;
+		}
 		if (current.sprinting) {
 			speed = 3;
 		}
@@ -254,6 +254,10 @@ public class NetworkMovement : NetworkBehaviour {
 	}
 	public virtual bool Sprint(Inputs inputs,Results current){
 		return inputs.sprint;
+	}
+
+	public virtual bool Crouch(Inputs inputs,Results current){
+		return inputs.crouch;
 	}
 
 	public virtual Quaternion Rotate(Inputs inputs, Results current){
@@ -308,6 +312,7 @@ public class NetworkMovement : NetworkBehaviour {
 			//Replay recorded inputs
 			for(int subIndex = foundIndex; subIndex < _inputsList.Count;subIndex++){
 				_results.rotation = Rotate(_inputsList[subIndex],_results);
+				_results.crouching = Crouch(_inputsList[subIndex],_results);
 				_results.sprinting = Sprint(_inputsList[subIndex],_results);
 				_results.position = Move(_inputsList[subIndex],_results);
 			}
