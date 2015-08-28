@@ -17,9 +17,9 @@ public class NetworkPawn : NetworkMovement {
 		inputs.sprint = Input.GetButton ("Sprint");
 	}
 
-	public override Vector3 Move (Inputs inputs, Vector3 current)
+	public override Vector3 Move (Inputs inputs, Results current)
 	{
-		pawn.position = current;
+		pawn.position = current.position;
 		float speed = 2;
 		if (inputs.sprint) {
 			speed = 3;
@@ -28,11 +28,11 @@ public class NetworkPawn : NetworkMovement {
 		return pawn.position;
 	}
 
-	public override Quaternion Rotate (Inputs inputs, Quaternion current)
+	public override Quaternion Rotate (Inputs inputs, Results current)
 	{
-		pawn.rotation = current;
-		float mHor = current.eulerAngles.y + inputs.pitch * Time.fixedDeltaTime;
-		float mVert = current.eulerAngles.x + inputs.yaw * Time.fixedDeltaTime;
+		pawn.rotation = current.rotation;
+		float mHor = current.rotation.eulerAngles.y + inputs.pitch * Time.fixedDeltaTime;
+		float mVert = current.rotation.eulerAngles.x + inputs.yaw * Time.fixedDeltaTime;
 		
 		if (mVert > 180)
 			mVert -= 360;

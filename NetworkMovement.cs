@@ -68,9 +68,9 @@ public class NetworkMovement : NetworkBehaviour {
 			//Client side prediction for non-authoritative client or plane movement and rotation for listen server/host
 			Vector3 lastPosition = _results.position;
 			Quaternion lastRotation = _results.rotation;
-			_results.rotation = Rotate(_inputs,_results.rotation);
-			_results.sprinting = Sprint(_inputs,_results.sprinting);
-			_results.position = Move(_inputs,_results.position);
+			_results.rotation = Rotate(_inputs,_results);
+			_results.sprinting = Sprint(_inputs,_results);
+			_results.position = Move(_inputs,_results);
 			if(hasAuthority){
 				//Listen server/host part
 				//Sending results to other clients(state sync)
@@ -118,9 +118,9 @@ public class NetworkMovement : NetworkBehaviour {
 				_inputsList.RemoveAt(0);
 				Vector3 lastPosition = _results.position;
 				Quaternion lastRotation = _results.rotation;
-				_results.rotation = Rotate(inputs,_results.rotation);
-				_results.sprinting = Sprint(inputs,_results.sprinting);
-				_results.position = Move(inputs,_results.position);
+				_results.rotation = Rotate(inputs,_results);
+				_results.sprinting = Sprint(inputs,_results);
+				_results.position = Move(inputs,_results);
 				//Sending results to other clients(state sync)
 				if(Vector3.Distance(_results.position,lastPosition) > 0 || Quaternion.Angle(_results.rotation,lastRotation) > 0){
 /*					Results results;
@@ -243,21 +243,21 @@ public class NetworkMovement : NetworkBehaviour {
 		transform.rotation = newRotation;
 	}
 
-	public virtual Vector3 Move(Inputs inputs, Vector3 current){
-		transform.position = current;
+	public virtual Vector3 Move(Inputs inputs, Results current){
+		transform.position = current.position;
 		float speed = 2;
-		if (inputs.sprint) {
+		if (current.sprinting) {
 			speed = 3;
 		}
 		transform.Translate (Vector3.ClampMagnitude(new Vector3(inputs.sides,0,inputs.forward),1) * speed * Time.fixedDeltaTime);
 		return transform.position;
 	}
-	public virtual bool Sprint(Inputs inputs,bool current){
+	public virtual bool Sprint(Inputs inputs,Results current){
 		return inputs.sprint;
 	}
 
-	public virtual Quaternion Rotate(Inputs inputs, Quaternion current){
-		transform.rotation = current;
+	public virtual Quaternion Rotate(Inputs inputs, Results current){
+		transform.rotation = current.rotation;
 		float mHor = transform.eulerAngles.y + inputs.pitch * Time.fixedDeltaTime;
 		float mVert = transform.eulerAngles.x + inputs.yaw * Time.fixedDeltaTime;
 		
@@ -307,9 +307,9 @@ public class NetworkMovement : NetworkBehaviour {
 			}
 			//Replay recorded inputs
 			for(int subIndex = foundIndex; subIndex < _inputsList.Count;subIndex++){
-				_results.rotation = Rotate(_inputsList[subIndex],_results.rotation);
-				_results.sprinting = Sprint(_inputsList[subIndex],_results.sprinting);
-				_results.position = Move(_inputsList[subIndex],_results.position);
+				_results.rotation = Rotate(_inputsList[subIndex],_results);
+				_results.sprinting = Sprint(_inputsList[subIndex],_results);
+				_results.position = Move(_inputsList[subIndex],_results);
 			}
 			//Remove all inputs before time stamp
 			int targetCount = _inputsList.Count - foundIndex;
