@@ -33,6 +33,8 @@ public class NetworkMovement : NetworkBehaviour {
 
 	//Synced from server to all clients
 	[SyncVar(hook="RecieveResults")]
+	private Results syncResults;
+
 	private Results _results;
 
 	//Owner client and server would store it's inputs in this list
@@ -64,23 +66,23 @@ public class NetworkMovement : NetworkBehaviour {
 			GetInputs(ref _inputs);
 			_inputs.timeStamp = Time.time;
 			//Client side prediction for non-authoritative client or plane movement and rotation for listen server/host
-			Vector3 lastPosition = _position;
-			Quaternion lastRotation = _rotation;
-			_rotation = Rotate(_inputs,_rotation);
-			_sprinting = Sprint(_inputs,_sprinting);
-			_position = Move(_inputs,_position);
+			Vector3 lastPosition = _results.position;
+			Quaternion lastRotation = _results.rotation;
+			_results.rotation = Rotate(_inputs,_results.rotation);
+			_results.sprinting = Sprint(_inputs,_results.sprinting);
+			_results.position = Move(_inputs,_results.position);
 			if(hasAuthority){
 				//Listen server/host part
 				//Sending results to other clients(state sync)
-				if(Vector3.Distance(_position,lastPosition) > 0 || Quaternion.Angle(_rotation,lastRotation) > 0){
-					Results results;
+				if(Vector3.Distance(_results.position,lastPosition) > 0 || Quaternion.Angle(_results.rotation,lastRotation) > 0){
+/*					Results results;
 					results.rotation = _rotation;
 					results.position = _position;
 					results.sprinting = _sprinting;
-					results.timeStamp = _inputs.timeStamp;
-
-					//Struct need to be fully rewritten to count as dirty 
-					_results = results;
+					results.timeStamp = _inputs.timeStamp;*/
+					_results.timeStamp = _inputs.timeStamp;
+					//Struct need to be fully rew_inputs.timeStampritten to count as dirty 
+					syncResults = _results;
 				}
 			}else{
 				//Owner client. Non-authoritative part
@@ -114,27 +116,27 @@ public class NetworkMovement : NetworkBehaviour {
 				//Move and rotate part. Nothing interesting here
 				Inputs inputs = _inputsList[0];
 				_inputsList.RemoveAt(0);
-				Vector3 lastPosition = _position;
-				Quaternion lastRotation = _rotation;
-				_rotation = Rotate(inputs,_rotation);
-				_sprinting = Sprint(inputs,_sprinting);
-				_position = Move(inputs,_position);
+				Vector3 lastPosition = _results.position;
+				Quaternion lastRotation = _results.rotation;
+				_results.rotation = Rotate(inputs,_results.rotation);
+				_results.sprinting = Sprint(inputs,_results.sprinting);
+				_results.position = Move(inputs,_results.position);
 				//Sending results to other clients(state sync)
-				if(Vector3.Distance(_position,lastPosition) > 0 || Quaternion.Angle(_rotation,lastRotation) > 0){
-					Results results;
+				if(Vector3.Distance(_results.position,lastPosition) > 0 || Quaternion.Angle(_results.rotation,lastRotation) > 0){
+/*					Results results;
 					results.rotation = _rotation;
 					results.position = _position;
 					results.sprinting = _sprinting;
-					results.timeStamp = inputs.timeStamp;
-
-					_results = results;
+					results.timeStamp = inputs.timeStamp;*/
+					_results.timeStamp = inputs.timeStamp;
+					syncResults = _results;
 				}
 			}else{
 				//Non-owner client a.k.a. dummy client
 				//there should be at least two records in the results list so it would be possible to interpolate between them in case if there would be some dropped packed or latency spike
 				//And yes this stupid structure should be here because it should start playing data when there are at least two records and continue playing even if there is only one record left 
-				_dummyPosition = Vector3.Lerp(_dummyPosition,_position,10 * Time.fixedDeltaTime);
-				_dummyRotation = Quaternion.Slerp(_dummyRotation,_rotation,10 * Time.fixedDeltaTime);
+				_dummyPosition = Vector3.Lerp(_dummyPosition,_results.position,10 * Time.fixedDeltaTime);
+				_dummyRotation = Quaternion.Slerp(_dummyRotation,_results.rotation,10 * Time.fixedDeltaTime);
 				if(_resultsList.Count == 0 && _dataIndex * _dataStep > 1){
 					_playData = false;
 				}
@@ -153,13 +155,13 @@ public class NetworkMovement : NetworkBehaviour {
 					_targetPosition = _resultsList[0].position;
 					_targetRotation = _resultsList[0].rotation;
 
-					_startPosition = _position;
-					_startRotation = _rotation;
+					_startPosition = _results.position;
+					_startRotation = _results.rotation;
 
 					_resultsList.RemoveAt(0);
 				}
-				_rotation = Quaternion.Slerp(_startRotation,_targetRotation,_dataIndex * _dataStep);
-				_position = Vector3.Lerp(_startPosition,_targetPosition,_dataIndex * _dataStep);
+				_results.rotation = Quaternion.Slerp(_startRotation,_targetRotation,_dataIndex * _dataStep);
+				_results.position = Vector3.Lerp(_startPosition,_targetPosition,_dataIndex * _dataStep);
 				UpdateRotation(_dummyRotation);
 				UpdatePosition(_dummyPosition);
 				_dataIndex++;
@@ -285,8 +287,8 @@ public class NetworkMovement : NetworkBehaviour {
 		//Server client reconciliation process should be executed in order to client's rotation and position with server values but do it without jittering
 		if (isLocalPlayer && !hasAuthority) {
 			//Update client's position and rotation with ones from server 
-			_rotation = results.rotation;
-			_position = results.position;
+			_results.rotation = results.rotation;
+			_results.position = results.position;
 			int foundIndex = -1;
 			//Search recieved time stamp in client's inputs list
 			for(int index = 0; index < _inputsList.Count; index++){
@@ -305,9 +307,9 @@ public class NetworkMovement : NetworkBehaviour {
 			}
 			//Replay recorded inputs
 			for(int subIndex = foundIndex; subIndex < _inputsList.Count;subIndex++){
-				_rotation = Rotate(_inputsList[subIndex],_rotation);
-				_sprinting = Sprint(_inputsList[subIndex],_sprinting);
-				_position = Move(_inputsList[subIndex],_position);
+				_results.rotation = Rotate(_inputsList[subIndex],_results.rotation);
+				_results.sprinting = Sprint(_inputsList[subIndex],_results.sprinting);
+				_results.position = Move(_inputsList[subIndex],_results.position);
 			}
 			//Remove all inputs before time stamp
 			int targetCount = _inputsList.Count - foundIndex;
