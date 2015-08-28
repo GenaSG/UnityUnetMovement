@@ -14,20 +14,25 @@ public class NetworkPawn : NetworkMovement {
 		inputs.forward = Input.GetAxis ("Vertical");
 		inputs.yaw = -Input.GetAxis("Mouse Y") * mouseSens;
 		inputs.pitch = Input.GetAxis("Mouse X") * mouseSens;
+		inputs.sprint = Input.GetButton ("Sprint");
 	}
 
-	public override Vector3 Move (float forward, float sides, Vector3 current)
+	public override Vector3 Move (Inputs inputs, Vector3 current)
 	{
 		pawn.position = current;
-		pawn.Translate (Vector3.ClampMagnitude(new Vector3(sides,0,forward),1) * 3 * Time.fixedDeltaTime);
+		float speed = 2;
+		if (inputs.sprint) {
+			speed = 3;
+		}
+		pawn.Translate (Vector3.ClampMagnitude(new Vector3(inputs.sides,0,inputs.forward),1) * speed * Time.fixedDeltaTime);
 		return pawn.position;
 	}
 
-	public override Quaternion Rotate (float pitch, float yaw, Quaternion current)
+	public override Quaternion Rotate (Inputs inputs, Quaternion current)
 	{
 		pawn.rotation = current;
-		float mHor = current.eulerAngles.y + pitch * Time.fixedDeltaTime;
-		float mVert = current.eulerAngles.x + yaw * Time.fixedDeltaTime;
+		float mHor = current.eulerAngles.y + inputs.pitch * Time.fixedDeltaTime;
+		float mVert = current.eulerAngles.x + inputs.yaw * Time.fixedDeltaTime;
 		
 		if (mVert > 180)
 			mVert -= 360;
