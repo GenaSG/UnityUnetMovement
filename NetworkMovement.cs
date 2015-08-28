@@ -39,7 +39,7 @@ public class NetworkMovement : NetworkBehaviour {
 	private List<Results> _resultsList = new List<Results>();
 	//Interpolation related variables
 	private bool _playData = false;
-	private int _dataIndex = 0;
+	private int _dataIndex = 1;
 	private float _dataStep = 0;
 	private Vector3 _startPosition;
 	private Vector3 _targetPosition;
@@ -47,8 +47,11 @@ public class NetworkMovement : NetworkBehaviour {
 	private Quaternion _targetRotation;
 	private float _lastUpdateTime = 0;
 
-	private Vector3 position;
-	private Quaternion rotation;
+	private Vector3 _position;
+	private Quaternion _rotation;
+
+	private Vector3 _dummyPosition;
+	private Quaternion _dummyRotation;
 
 
 	
@@ -58,17 +61,17 @@ public class NetworkMovement : NetworkBehaviour {
 			GetInputs(ref _inputs);
 			_inputs.timeStamp = Time.time;
 			//Client side prediction for non-authoritative client or plane movement and rotation for listen server/host
-			Vector3 lastPosition = position;
-			Quaternion lastRotation = rotation;
-			rotation = Rotate(_inputs.pitch,_inputs.yaw,rotation);
-			position = Move(_inputs.forward,_inputs.sides,position);
+			Vector3 lastPosition = _position;
+			Quaternion lastRotation = _rotation;
+			_rotation = Rotate(_inputs.pitch,_inputs.yaw,_rotation);
+			_position = Move(_inputs.forward,_inputs.sides,_position);
 			if(hasAuthority){
 				//Listen server/host part
 				//Sending results to other clients(state sync)
-				if(Vector3.Distance(position,lastPosition) > 0 || Quaternion.Angle(rotation,lastRotation) > 0){
+				if(Vector3.Distance(_position,lastPosition) > 0 || Quaternion.Angle(_rotation,lastRotation) > 0){
 					Results results;
-					results.rotation = rotation;
-					results.position = position;
+					results.rotation = _rotation;
+					results.position = _position;
 					results.timeStamp = _inputs.timeStamp;
 					//Struct need to be fully rewritten to count as dirty 
 					_results = results;
@@ -105,15 +108,15 @@ public class NetworkMovement : NetworkBehaviour {
 				//Move and rotate part. Nothing interesting here
 				Inputs inputs = _inputsList[0];
 				_inputsList.RemoveAt(0);
-				Vector3 lastPosition = position;
-				Quaternion lastRotation = rotation;
-				rotation = Rotate(inputs.pitch,inputs.yaw,rotation);
-				position = Move(inputs.forward,inputs.sides,position);
+				Vector3 lastPosition = _position;
+				Quaternion lastRotation = _rotation;
+				_rotation = Rotate(inputs.pitch,inputs.yaw,_rotation);
+				_position = Move(inputs.forward,inputs.sides,_position);
 				//Sending results to other clients(state sync)
-				if(Vector3.Distance(position,lastPosition) > 0 || Quaternion.Angle(rotation,lastRotation) > 0){
+				if(Vector3.Distance(_position,lastPosition) > 0 || Quaternion.Angle(_rotation,lastRotation) > 0){
 					Results results;
-					results.rotation = rotation;
-					results.position = position;
+					results.rotation = _rotation;
+					results.position = _position;
 					results.timeStamp = inputs.timeStamp;
 					_results = results;
 				}
@@ -121,7 +124,9 @@ public class NetworkMovement : NetworkBehaviour {
 				//Non-owner client a.k.a. dummy client
 				//there should be at least two records in the results list so it would be possible to interpolate between them in case if there would be some dropped packed or latency spike
 				//And yes this stupid structure should be here because it should start playing data when there are at least two records and continue playing even if there is only one record left 
-				if(_resultsList.Count == 0){
+				_dummyPosition = Vector3.Lerp(_dummyPosition,_position,10 * Time.fixedDeltaTime);
+				_dummyRotation = Quaternion.Slerp(_dummyRotation,_rotation,10 * Time.fixedDeltaTime);
+				if(_resultsList.Count == 0 && _dataIndex * _dataStep > 1){
 					_playData = false;
 				}
 				if(_resultsList.Count >=2){
@@ -132,23 +137,24 @@ public class NetworkMovement : NetworkBehaviour {
 				}
 				//This interpolation approach a bit different from "standard approach"(transform.position = Vector3.Lerp(transform.position,target.position,speed * Time.fixedDeltaTime)).
 				//This approach eliminates ice sliding effect and guaranties correct position and rotation 
-				if(_dataIndex==0){
+				if(_dataIndex * _dataStep > 1){
+					_dataIndex = 1;
+				}
+				if(_dataIndex==1){
 					_targetPosition = _resultsList[0].position;
 					_targetRotation = _resultsList[0].rotation;
 
-					_startPosition = position;
-					_startRotation = rotation;
+					_startPosition = _position;
+					_startRotation = _rotation;
 
 					_resultsList.RemoveAt(0);
 				}
-				rotation = Quaternion.Slerp(_startRotation,_targetRotation,_dataIndex * _dataStep);
-				position = Vector3.Lerp(_startPosition,_targetPosition,_dataIndex * _dataStep);
-				UpdateRotation(rotation);
-				UpdatePosition(position);
+				_rotation = Quaternion.Slerp(_startRotation,_targetRotation,_dataIndex * _dataStep);
+				_position = Vector3.Lerp(_startPosition,_targetPosition,_dataIndex * _dataStep);
+				UpdateRotation(_dummyRotation);
+				UpdatePosition(_dummyPosition);
 				_dataIndex++;
-				if(_dataIndex * _dataStep > 1){
-					_dataIndex = 0;
-				}
+
 			}
 		}
 	}
@@ -250,7 +256,7 @@ public class NetworkMovement : NetworkBehaviour {
 		//Non-owner client
 		if (!isLocalPlayer && !hasAuthority) {
 			//Getting data step. Needed for correct interpolation 
-			_dataStep = Time.fixedDeltaTime/GetNetworkSendInterval();
+			_dataStep = 1/((GetNetworkSendInterval()/Time.fixedDeltaTime)+1);
 			//Adding results to the results list so they can be used in interpolation process
 			_resultsList.Add(results);
 		}
@@ -258,8 +264,8 @@ public class NetworkMovement : NetworkBehaviour {
 		//Server client reconciliation process should be executed in order to client's rotation and position with server values but do it without jittering
 		if (isLocalPlayer && !hasAuthority) {
 			//Update client's position and rotation with ones from server 
-			rotation = results.rotation;
-			position = results.position;
+			_rotation = results.rotation;
+			_position = results.position;
 			int foundIndex = -1;
 			//Search recieved time stamp in client's inputs list
 			for(int index = 0; index < _inputsList.Count; index++){
@@ -278,8 +284,8 @@ public class NetworkMovement : NetworkBehaviour {
 			}
 			//Replay recorded inputs
 			for(int subIndex = foundIndex; subIndex < _inputsList.Count;subIndex++){
-				rotation = Rotate(_inputsList[subIndex].pitch,_inputsList[subIndex].yaw,rotation);
-				position = Move(_inputsList[subIndex].forward,_inputsList[subIndex].sides,position);
+				_rotation = Rotate(_inputsList[subIndex].pitch,_inputsList[subIndex].yaw,_rotation);
+				_position = Move(_inputsList[subIndex].forward,_inputsList[subIndex].sides,_position);
 			}
 			//Remove all inputs before time stamp
 			int targetCount = _inputsList.Count - foundIndex;
