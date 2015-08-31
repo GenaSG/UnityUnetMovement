@@ -18,6 +18,8 @@ public class NetworkMovement : NetworkBehaviour {
 		public float pitch;
 		public bool sprint;
 		public bool crouch;
+		public bool jump;
+
 		public float timeStamp;
 	}
 	//This struct would be used to collect results of Move and Rotate functions
@@ -45,31 +47,26 @@ public class NetworkMovement : NetworkBehaviour {
 	private List<Results> _resultsList = new List<Results>();
 	//Interpolation related variables
 	private bool _playData = false;
-	private int _dataIndex = 1;
 	private float _dataStep = 0;
-	private Vector3 _startPosition;
-	private Vector3 _targetPosition;
-	private Quaternion _startRotation;
-	private Quaternion _targetRotation;
-	private float _lastUpdateTime = 0;
+	private float _lastTimeStamp = 0;
 
-	private Vector3 _position;
-	private Quaternion _rotation;
-	private bool _sprinting;
 
 	private Vector3 _dummyPosition;
 	private Quaternion _dummyRotation;
+	private bool _dummyCrouch;
+	private float _step = 0;
 
 
-	
 	void FixedUpdate(){
 		if (isLocalPlayer) {
+
 			//Getting clients inputs
 			GetInputs(ref _inputs);
 			_inputs.timeStamp = Time.time;
 			//Client side prediction for non-authoritative client or plane movement and rotation for listen server/host
 			Vector3 lastPosition = _results.position;
 			Quaternion lastRotation = _results.rotation;
+			bool lastCrouch = _results.crouching;
 			_results.rotation = Rotate(_inputs,_results);
 			_results.crouching = Crouch(_inputs,_results);
 			_results.sprinting = Sprint(_inputs,_results);
@@ -77,29 +74,35 @@ public class NetworkMovement : NetworkBehaviour {
 			if(hasAuthority){
 				//Listen server/host part
 				//Sending results to other clients(state sync)
-				if(Vector3.Distance(_results.position,lastPosition) > 0 || Quaternion.Angle(_results.rotation,lastRotation) > 0){
-					_results.timeStamp = _inputs.timeStamp;
-					//Struct need to be fully rew_inputs.timeStampritten to count as dirty 
-					syncResults = _results;
+				if(_dataStep >= GetNetworkSendInterval()){
+					if(Vector3.Distance(_results.position,lastPosition) > 0 || Quaternion.Angle(_results.rotation,lastRotation) > 0 || _results.crouching != lastCrouch ){
+						_results.timeStamp = _inputs.timeStamp;
+						//Struct need to be fully new to count as dirty 
+						syncResults = _results;
+					}
+					_dataStep = 0;
 				}
+				_dataStep += Time.fixedDeltaTime;
 			}else{
 				//Owner client. Non-authoritative part
 				//Add inputs to the inputs list so they could be used during reconciliation process
-				if(((_inputs.forward != 0 || _inputs.sides != 0) || (_inputs.pitch !=0 || _inputs.yaw !=0 )) && _inputsList.Count <= 100){
+				if(Vector3.Distance(_results.position,lastPosition) > 0 || Quaternion.Angle(_results.rotation,lastRotation) > 0 || _results.crouching != lastCrouch ){
 					_inputsList.Add(_inputs);
 				}
 				//Sending inputs to the server
 				//Unfortunately there is now method overload for [Command] so I need to write several almost similar functions
 				//This one is needed to save on network traffic
-				if(_inputs.forward != 0 || _inputs.sides != 0){
-					if(_inputs.pitch !=0 || _inputs.yaw != 0){
-						Cmd_MovementRotationInputs(_inputs.forward,_inputs.sides,_inputs.pitch,_inputs.yaw,_inputs.sprint,_inputs.crouch,_inputs.timeStamp);
+				if(Vector3.Distance(_results.position,lastPosition) > 0 ){
+					if(Quaternion.Angle(_results.rotation,lastRotation) > 0){
+						Cmd_MovementRotationInputs(_inputs.forward,_inputs.sides,_inputs.pitch,_inputs.yaw,_inputs.sprint,_inputs.crouch,_inputs.jump,_inputs.timeStamp);
 					}else{
-						Cmd_MovementInputs(_inputs.forward,_inputs.sides,_inputs.sprint,_inputs.crouch,_inputs.timeStamp);
+						Cmd_MovementInputs(_inputs.forward,_inputs.sides,_inputs.sprint,_inputs.crouch,_inputs.jump,_inputs.timeStamp);
 					}
 				}else{
-					if(_inputs.pitch !=0 || _inputs.yaw !=0){
-						Cmd_RotationInputs(_inputs.pitch,_inputs.yaw,_inputs.crouch,_inputs.timeStamp);
+					if(Quaternion.Angle(_results.rotation,lastRotation) > 0){
+						Cmd_RotationInputs(_inputs.pitch,_inputs.yaw,_inputs.crouch,_inputs.jump,_inputs.timeStamp);
+					}else{
+						Cmd_OnlyStances(_inputs.crouch,_inputs.timeStamp);
 					}
 				}
 			}
@@ -121,17 +124,22 @@ public class NetworkMovement : NetworkBehaviour {
 				_results.sprinting = Sprint(inputs,_results);
 				_results.position = Move(inputs,_results);
 				//Sending results to other clients(state sync)
-				if(Vector3.Distance(_results.position,lastPosition) > 0 || Quaternion.Angle(_results.rotation,lastRotation) > 0){
-					_results.timeStamp = inputs.timeStamp;
-					syncResults = _results;
+
+				if(_dataStep >= GetNetworkSendInterval()){
+					if(Vector3.Distance(_results.position,lastPosition) > 0 || Quaternion.Angle(_results.rotation,lastRotation) > 0){
+						_results.timeStamp = inputs.timeStamp;
+						syncResults = _results;
+					}
+					_dataStep = 0;
 				}
+				_dataStep += Time.fixedDeltaTime;
 			}else{
 				//Non-owner client a.k.a. dummy client
 				//there should be at least two records in the results list so it would be possible to interpolate between them in case if there would be some dropped packed or latency spike
 				//And yes this stupid structure should be here because it should start playing data when there are at least two records and continue playing even if there is only one record left 
-				_dummyPosition = Vector3.Lerp(_dummyPosition,_results.position,10 * Time.fixedDeltaTime);
-				_dummyRotation = Quaternion.Slerp(_dummyRotation,_results.rotation,10 * Time.fixedDeltaTime);
-				if(_resultsList.Count == 0 && _dataIndex * _dataStep > 1){
+				Debug.Log ("_resultsList.Count  = " + _resultsList.Count );
+				if(_resultsList.Count == 0){
+
 					_playData = false;
 				}
 				if(_resultsList.Count >=2){
@@ -140,33 +148,43 @@ public class NetworkMovement : NetworkBehaviour {
 				if(!_playData){
 					return;
 				}
-				//This interpolation approach a bit different from "standard approach"(transform.position = Vector3.Lerp(transform.position,target.position,speed * Time.fixedDeltaTime)).
-				//This approach eliminates ice sliding effect and guaranties correct position and rotation 
-				if(_dataIndex * _dataStep > 1){
-					_dataIndex = 1;
-				}
-				if(_dataIndex==1){
-					_targetPosition = _resultsList[0].position;
-					_targetRotation = _resultsList[0].rotation;
-
-					_startPosition = _results.position;
-					_startRotation = _results.rotation;
-
+				_step = 1/(GetNetworkSendInterval()) ;
+				_dataStep += _step * Time.fixedDeltaTime;
+				_results.rotation = Quaternion.Slerp(_results.rotation,_resultsList[0].rotation,_dataStep);
+				_results.position = Vector3.Lerp(_results.position,_resultsList[0].position,_dataStep);
+				_results.crouching = _resultsList[0].crouching;
+				_results.sprinting = _resultsList[0].sprinting;
+				UpdateRotation(_results.rotation);
+				UpdatePosition(_results.position);
+				UpdateCrouch(_results.crouching );
+				UpdateSprinting(_results.sprinting );
+				if(_dataStep>= 1){
+					_dataStep = 0;
 					_resultsList.RemoveAt(0);
-				}
-				_results.rotation = Quaternion.Slerp(_startRotation,_targetRotation,_dataIndex * _dataStep);
-				_results.position = Vector3.Lerp(_startPosition,_targetPosition,_dataIndex * _dataStep);
-				UpdateRotation(_dummyRotation);
-				UpdatePosition(_dummyPosition);
-				_dataIndex++;
 
+				}
 			}
 		}
 	}
-
+	//Standing on spot
+	[Command]
+	void Cmd_OnlyStances(bool crouch,float timeStamp){
+		if (hasAuthority && !isLocalPlayer) {
+			Inputs inputs;
+			inputs.forward = 0;
+			inputs.sides = 0;
+			inputs.pitch = 0;
+			inputs.yaw = 0;
+			inputs.sprint = false;
+			inputs.crouch = crouch;
+			inputs.jump = false;
+			inputs.timeStamp = timeStamp;
+			_inputsList.Add(inputs);
+		}
+	}
 	//Only rotation inputs sent 
 	[Command(channel = 0)]
-	void Cmd_RotationInputs(float pitch,float yaw,bool crouch,float timeStamp){
+	void Cmd_RotationInputs(float pitch,float yaw,bool crouch,bool jump,float timeStamp){
 		if (hasAuthority && !isLocalPlayer) {
 			Inputs inputs;
 			inputs.forward = 0;
@@ -175,13 +193,14 @@ public class NetworkMovement : NetworkBehaviour {
 			inputs.yaw = yaw;
 			inputs.sprint = false;
 			inputs.crouch = crouch;
+			inputs.jump = jump;
 			inputs.timeStamp = timeStamp;
 			_inputsList.Add(inputs);
 		}
 	}
 	//Rotation and movement inputs sent 
 	[Command(channel = 0)]
-	void Cmd_MovementRotationInputs(float forward, float sides,float pitch,float yaw,bool sprint,bool crouch,float timeStamp){
+	void Cmd_MovementRotationInputs(float forward, float sides,float pitch,float yaw,bool sprint,bool crouch,bool jump,float timeStamp){
 		if (hasAuthority && !isLocalPlayer) {
 			Inputs inputs;
 			inputs.forward = Mathf.Clamp(forward,-1,1);
@@ -190,6 +209,7 @@ public class NetworkMovement : NetworkBehaviour {
 			inputs.yaw = yaw;
 			inputs.sprint = sprint;
 			inputs.crouch = crouch;
+			inputs.jump = jump;
 			inputs.timeStamp = timeStamp;
 			_inputsList.Add(inputs);
 		}
@@ -197,7 +217,7 @@ public class NetworkMovement : NetworkBehaviour {
 
 	//Only movements inputs sent
 	[Command(channel = 0)]
-	void Cmd_MovementInputs(float forward, float sides,bool sprint,bool crouch,float timeStamp){
+	void Cmd_MovementInputs(float forward, float sides,bool sprint,bool crouch,bool jump,float timeStamp){
 		if (hasAuthority && !isLocalPlayer) {
 			Inputs inputs;
 			inputs.forward = Mathf.Clamp(forward,-1,1);
@@ -206,6 +226,7 @@ public class NetworkMovement : NetworkBehaviour {
 			inputs.yaw = 0;
 			inputs.sprint = sprint;
 			inputs.crouch = crouch;
+			inputs.jump = jump;
 			inputs.timeStamp = timeStamp;
 			_inputsList.Add(inputs);
 		}
@@ -219,6 +240,7 @@ public class NetworkMovement : NetworkBehaviour {
 		inputs.pitch = Input.GetAxis("Mouse X") * 100;
 		inputs.sprint = Input.GetButton ("Sprint");
 		inputs.crouch = Input.GetButton ("Crouch");
+		inputs.jump = Input.GetButton ("Jump");
 	}
 	
 	sbyte RoundToLargest(float inp){
@@ -230,7 +252,7 @@ public class NetworkMovement : NetworkBehaviour {
 		return 0;
 	}
 
-	//Next six functions can be changed in inherited class for custom movement and rotation mechanics
+	//Next virtual functions can be changed in inherited class for custom movement and rotation mechanics
 	//So it would be possible to control for example humanoid or vehicle from one script just by changing controlled pawn
 	public virtual void UpdatePosition(Vector3 newPosition){
 		transform.position = newPosition;
@@ -238,6 +260,14 @@ public class NetworkMovement : NetworkBehaviour {
 
 	public virtual void UpdateRotation(Quaternion newRotation){
 		transform.rotation = newRotation;
+	}
+
+	public virtual void UpdateCrouch(bool crouch){
+
+	}
+
+	public virtual void UpdateSprinting(bool sprinting){
+		
 	}
 
 	public virtual Vector3 Move(Inputs inputs, Results current){
@@ -270,23 +300,23 @@ public class NetworkMovement : NetworkBehaviour {
 		transform.rotation = Quaternion.Euler (mVert, mHor, 0);
 		return transform.rotation;
 	}
-
+	//
 
 	//Updating Clients with server states
 	[ClientCallback]
 	void RecieveResults(Results results){
 		//Discard out of order results
-		if (results.timeStamp <= _lastUpdateTime) {
+		if (results.timeStamp <= _lastTimeStamp) {
 			return;
 		}
-		_lastUpdateTime = results.timeStamp;
+		_lastTimeStamp = results.timeStamp;
 		//Non-owner client
 		if (!isLocalPlayer && !hasAuthority) {
-			//Getting data step. Needed for correct interpolation 
-			_dataStep = 1/((GetNetworkSendInterval()/Time.fixedDeltaTime)+1);
 			//Adding results to the results list so they can be used in interpolation process
+			results.timeStamp = Time.time;
 			_resultsList.Add(results);
 		}
+
 		//Owner client
 		//Server client reconciliation process should be executed in order to client's rotation and position with server values but do it without jittering
 		if (isLocalPlayer && !hasAuthority) {
