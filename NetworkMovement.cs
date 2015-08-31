@@ -137,7 +137,6 @@ public class NetworkMovement : NetworkBehaviour {
 				//Non-owner client a.k.a. dummy client
 				//there should be at least two records in the results list so it would be possible to interpolate between them in case if there would be some dropped packed or latency spike
 				//And yes this stupid structure should be here because it should start playing data when there are at least two records and continue playing even if there is only one record left 
-				Debug.Log ("_resultsList.Count  = " + _resultsList.Count );
 				if(_resultsList.Count == 0){
 
 					_playData = false;
