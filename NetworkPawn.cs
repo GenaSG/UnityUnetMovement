@@ -5,9 +5,11 @@ public class NetworkPawn : NetworkMovement {
 	public Transform pawn;
 	public float mouseSens = 100;
 	public CharacterController characterController;
-	private float verticalSpeed = 0;
-	private float fallStartTime = 0;
-
+	private float _verticalSpeed = 0;
+	public float _jumpHeight = 10;
+	private bool _jump = false;
+	private float _fallStartTime = 0;
+	
 	void Start(){
 	}
 
@@ -19,8 +21,23 @@ public class NetworkPawn : NetworkMovement {
 		inputs.pitch = Input.GetAxis("Mouse X") * mouseSens;
 		inputs.sprint = Input.GetButton ("Sprint");
 		inputs.crouch = Input.GetButton ("Crouch");
-		inputs.jump = Input.GetButton ("Jump");
+		float verticalTarget = -1;
+		if (characterController.isGrounded) {
+			if (Input.GetButton ("Jump")) {
+				_jump = true;
+			}
+			inputs.vertical = 0;
+			verticalTarget = 0;
+		}
+		if (_jump) {
+			verticalTarget = 1;
+			if(inputs.vertical >= 0.9f){
+				_jump = false;
+			}
+		}
+		inputs.vertical = Mathf.Lerp (inputs.vertical, verticalTarget, 20 * Time.fixedDeltaTime);
 	}
+
 
 	public override Vector3 Move (Inputs inputs, Results current)
 	{
@@ -32,14 +49,12 @@ public class NetworkPawn : NetworkMovement {
 		if (current.sprinting) {
 			speed = 3;
 		}
-		if (!characterController.isGrounded) {
-			verticalSpeed -= (Physics.gravity * (inputs.timeStamp - fallStartTime)).magnitude;
-
+		if (inputs.vertical > 0) {
+			_verticalSpeed = inputs.vertical * _jumpHeight;
 		} else {
-			verticalSpeed = 0;
-			fallStartTime = inputs.timeStamp;
+			_verticalSpeed = inputs.vertical * Physics.gravity.magnitude;
 		}
-		characterController.Move ((Vector3.ClampMagnitude(new Vector3(inputs.sides,0,inputs.forward),1) * speed + new Vector3(0,verticalSpeed,0) ) * Time.fixedDeltaTime);
+		characterController.Move ((Vector3.ClampMagnitude(new Vector3(inputs.sides,0,inputs.forward),1) * speed + new Vector3(0,_verticalSpeed,0) ) * Time.fixedDeltaTime);
 		return pawn.position;
 
 	}

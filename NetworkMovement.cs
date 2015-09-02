@@ -15,10 +15,10 @@ public class NetworkMovement : NetworkBehaviour {
 		public float forward;
 		public float sides;
 		public float yaw;
+		public float vertical;
 		public float pitch;
 		public bool sprint;
 		public bool crouch;
-		public bool jump;
 
 		public float timeStamp;
 	}
@@ -49,11 +49,8 @@ public class NetworkMovement : NetworkBehaviour {
 	private bool _playData = false;
 	private float _dataStep = 0;
 	private float _lastTimeStamp = 0;
+	private bool _jumping = false;
 
-
-	private Vector3 _dummyPosition;
-	private Quaternion _dummyRotation;
-	private bool _dummyCrouch;
 	private float _step = 0;
 
 
@@ -94,13 +91,13 @@ public class NetworkMovement : NetworkBehaviour {
 				//This one is needed to save on network traffic
 				if(Vector3.Distance(_results.position,lastPosition) > 0 ){
 					if(Quaternion.Angle(_results.rotation,lastRotation) > 0){
-						Cmd_MovementRotationInputs(_inputs.forward,_inputs.sides,_inputs.pitch,_inputs.yaw,_inputs.sprint,_inputs.crouch,_inputs.jump,_inputs.timeStamp);
+						Cmd_MovementRotationInputs(_inputs.forward,_inputs.sides,_inputs.vertical,_inputs.pitch,_inputs.yaw,_inputs.sprint,_inputs.crouch,_inputs.timeStamp);
 					}else{
-						Cmd_MovementInputs(_inputs.forward,_inputs.sides,_inputs.sprint,_inputs.crouch,_inputs.jump,_inputs.timeStamp);
+						Cmd_MovementInputs(_inputs.forward,_inputs.sides,_inputs.vertical,_inputs.sprint,_inputs.crouch,_inputs.timeStamp);
 					}
 				}else{
 					if(Quaternion.Angle(_results.rotation,lastRotation) > 0){
-						Cmd_RotationInputs(_inputs.pitch,_inputs.yaw,_inputs.crouch,_inputs.jump,_inputs.timeStamp);
+						Cmd_RotationInputs(_inputs.pitch,_inputs.yaw,_inputs.crouch,_inputs.timeStamp);
 					}else{
 						Cmd_OnlyStances(_inputs.crouch,_inputs.timeStamp);
 					}
@@ -173,42 +170,42 @@ public class NetworkMovement : NetworkBehaviour {
 			inputs.forward = 0;
 			inputs.sides = 0;
 			inputs.pitch = 0;
+			inputs.vertical = 0;
 			inputs.yaw = 0;
 			inputs.sprint = false;
 			inputs.crouch = crouch;
-			inputs.jump = false;
 			inputs.timeStamp = timeStamp;
 			_inputsList.Add(inputs);
 		}
 	}
 	//Only rotation inputs sent 
 	[Command(channel = 0)]
-	void Cmd_RotationInputs(float pitch,float yaw,bool crouch,bool jump,float timeStamp){
+	void Cmd_RotationInputs(float pitch,float yaw,bool crouch,float timeStamp){
 		if (hasAuthority && !isLocalPlayer) {
 			Inputs inputs;
 			inputs.forward = 0;
 			inputs.sides = 0;
+			inputs.vertical =0;
 			inputs.pitch = pitch;
 			inputs.yaw = yaw;
 			inputs.sprint = false;
 			inputs.crouch = crouch;
-			inputs.jump = jump;
 			inputs.timeStamp = timeStamp;
 			_inputsList.Add(inputs);
 		}
 	}
 	//Rotation and movement inputs sent 
 	[Command(channel = 0)]
-	void Cmd_MovementRotationInputs(float forward, float sides,float pitch,float yaw,bool sprint,bool crouch,bool jump,float timeStamp){
+	void Cmd_MovementRotationInputs(float forward, float sides,float vertical,float pitch,float yaw,bool sprint,bool crouch,float timeStamp){
 		if (hasAuthority && !isLocalPlayer) {
 			Inputs inputs;
 			inputs.forward = Mathf.Clamp(forward,-1,1);
 			inputs.sides = Mathf.Clamp(sides,-1,1);
+			inputs.vertical = Mathf.Clamp(vertical,-1,1);
 			inputs.pitch = pitch;
 			inputs.yaw = yaw;
 			inputs.sprint = sprint;
 			inputs.crouch = crouch;
-			inputs.jump = jump;
 			inputs.timeStamp = timeStamp;
 			_inputsList.Add(inputs);
 		}
@@ -216,16 +213,16 @@ public class NetworkMovement : NetworkBehaviour {
 
 	//Only movements inputs sent
 	[Command(channel = 0)]
-	void Cmd_MovementInputs(float forward, float sides,bool sprint,bool crouch,bool jump,float timeStamp){
+	void Cmd_MovementInputs(float forward, float sides,float vertical,bool sprint,bool crouch,float timeStamp){
 		if (hasAuthority && !isLocalPlayer) {
 			Inputs inputs;
 			inputs.forward = Mathf.Clamp(forward,-1,1);
 			inputs.sides = Mathf.Clamp(sides,-1,1);
+			inputs.vertical = Mathf.Clamp(vertical,-1,1);
 			inputs.pitch = 0;
 			inputs.yaw = 0;
 			inputs.sprint = sprint;
 			inputs.crouch = crouch;
-			inputs.jump = jump;
 			inputs.timeStamp = timeStamp;
 			_inputsList.Add(inputs);
 		}
@@ -239,7 +236,17 @@ public class NetworkMovement : NetworkBehaviour {
 		inputs.pitch = Input.GetAxis("Mouse X") * 100;
 		inputs.sprint = Input.GetButton ("Sprint");
 		inputs.crouch = Input.GetButton ("Crouch");
-		inputs.jump = Input.GetButton ("Jump");
+		if (Input.GetButtonDown ("Jump") && inputs.vertical <=-0.9f) {
+			_jumping = true;
+		}
+		float verticalTarget = -1;
+		if (_jumping) {
+			verticalTarget = 1;
+			if(inputs.vertical >= 0.9f){
+				_jumping = false;
+			}
+		}
+		inputs.vertical = Mathf.Lerp (inputs.vertical, verticalTarget, 20 * Time.fixedDeltaTime);
 	}
 	
 	sbyte RoundToLargest(float inp){
@@ -278,7 +285,7 @@ public class NetworkMovement : NetworkBehaviour {
 		if (current.sprinting) {
 			speed = 3;
 		}
-		transform.Translate (Vector3.ClampMagnitude(new Vector3(inputs.sides,0,inputs.forward),1) * speed * Time.fixedDeltaTime);
+		transform.Translate (Vector3.ClampMagnitude(new Vector3(inputs.sides,inputs.vertical,inputs.forward),1) * speed * Time.fixedDeltaTime);
 		return transform.position;
 	}
 	public virtual bool Sprint(Inputs inputs,Results current){
@@ -343,6 +350,7 @@ public class NetworkMovement : NetworkBehaviour {
 				_results.rotation = Rotate(_inputsList[subIndex],_results);
 				_results.crouching = Crouch(_inputsList[subIndex],_results);
 				_results.sprinting = Sprint(_inputsList[subIndex],_results);
+
 				_results.position = Move(_inputsList[subIndex],_results);
 			}
 			//Remove all inputs before time stamp
