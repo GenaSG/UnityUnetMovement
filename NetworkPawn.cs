@@ -8,7 +8,6 @@ public class NetworkPawn : NetworkMovement {
 	private float _verticalSpeed = 0;
 	public float _jumpHeight = 10;
 	private bool _jump = false;
-	private float _fallStartTime = 0;
 	
 	void Start(){
 	}
