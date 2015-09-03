@@ -17,8 +17,8 @@ public class NetworkPawn : NetworkMovement {
 	{
 		inputs.sides = Input.GetAxis ("Horizontal");
 		inputs.forward = Input.GetAxis ("Vertical");
-		inputs.yaw = -Input.GetAxis("Mouse Y") * mouseSens;
-		inputs.pitch = Input.GetAxis("Mouse X") * mouseSens;
+		inputs.yaw = -Input.GetAxis("Mouse Y") * mouseSens * Time.fixedDeltaTime/Time.deltaTime;
+		inputs.pitch = Input.GetAxis("Mouse X") * mouseSens* Time.fixedDeltaTime/Time.deltaTime;
 		inputs.sprint = Input.GetButton ("Sprint");
 		inputs.crouch = Input.GetButton ("Crouch");
 		float verticalTarget = -1;

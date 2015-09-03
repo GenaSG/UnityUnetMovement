@@ -53,12 +53,17 @@ public class NetworkMovement : NetworkBehaviour {
 
 	private float _step = 0;
 
+	void Update(){
+		if (isLocalPlayer) {
+			//Getting clients inputs
+			GetInputs (ref _inputs);
+		}
+	}
 
 	void FixedUpdate(){
 		if (isLocalPlayer) {
 
 			//Getting clients inputs
-			GetInputs(ref _inputs);
 			_inputs.timeStamp = Time.time;
 			//Client side prediction for non-authoritative client or plane movement and rotation for listen server/host
 			Vector3 lastPosition = _results.position;
@@ -230,10 +235,12 @@ public class NetworkMovement : NetworkBehaviour {
 	//Self explanatory
 	//Can be changed in inherited class
 	public virtual void GetInputs(ref Inputs inputs){
+		//Don't use one frame events in this part
+		//It would be processed incorrectly 
 		inputs.sides = RoundToLargest(Input.GetAxis ("Horizontal"));
 		inputs.forward = RoundToLargest(Input.GetAxis ("Vertical"));
-		inputs.yaw = -Input.GetAxis("Mouse Y") * 100;
-		inputs.pitch = Input.GetAxis("Mouse X") * 100;
+		inputs.yaw = -Input.GetAxis("Mouse Y") * 100 * Time.fixedDeltaTime/Time.deltaTime;
+		inputs.pitch = Input.GetAxis("Mouse X") * 100 * Time.fixedDeltaTime/Time.deltaTime;
 		inputs.sprint = Input.GetButton ("Sprint");
 		inputs.crouch = Input.GetButton ("Crouch");
 		if (Input.GetButtonDown ("Jump") && inputs.vertical <=-0.9f) {
