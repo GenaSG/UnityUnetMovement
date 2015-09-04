@@ -51,6 +51,8 @@ public class NetworkMovement : NetworkBehaviour {
 	private float _dataStep = 0;
 	private float _lastTimeStamp = 0;
 	private bool _jumping = false;
+	private Vector3 _startPosition;
+	private Quaternion _startRotation;
 
 	private float _step = 0;
 
@@ -159,11 +161,14 @@ public class NetworkMovement : NetworkBehaviour {
 				if(!_playData){
 					return;
 				}
-
+				if(_dataStep==0){
+					_startPosition = _results.position;
+					_startRotation = _results.rotation;
+				}
 				_step = 1/(GetNetworkSendInterval()) ;
 				_dataStep += _step * Time.fixedDeltaTime;
-				_results.rotation = Quaternion.Slerp(_results.rotation,_resultsList[0].rotation,_dataStep);
-				_results.position = Vector3.Lerp(_results.position,_resultsList[0].position,_dataStep);
+				_results.rotation = Quaternion.Slerp(_startRotation,_resultsList[0].rotation,_dataStep);
+				_results.position = Vector3.Lerp(_startPosition,_resultsList[0].position,_dataStep);
 				_results.crouching = _resultsList[0].crouching;
 				_results.sprinting = _resultsList[0].sprinting;
 				UpdateRotation(_results.rotation);
@@ -179,7 +184,7 @@ public class NetworkMovement : NetworkBehaviour {
 		}
 	}
 	//Standing on spot
-	[Command]
+	[Command(channel = 0)]
 	void Cmd_OnlyStances(bool crouch,float timeStamp){
 		if (hasAuthority && !isLocalPlayer) {
 			Inputs inputs;
