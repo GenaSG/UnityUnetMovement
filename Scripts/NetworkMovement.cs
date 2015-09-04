@@ -9,6 +9,7 @@ using System.Collections.Generic;
 //channel #1: Unreliable
 [NetworkSettings(channel=0,sendInterval=0.04f)]
 public class NetworkMovement : NetworkBehaviour {
+	public bool constantUpdate = false;
 	//This struct would be used to collect player inputs
 	public struct Inputs			
 	{
@@ -85,7 +86,7 @@ public class NetworkMovement : NetworkBehaviour {
 				//Listen server/host part
 				//Sending results to other clients(state sync)
 				if(_dataStep >= GetNetworkSendInterval()){
-					if(Vector3.Distance(_results.position,lastPosition) > 0 || Quaternion.Angle(_results.rotation,lastRotation) > 0 || _results.crouching != lastCrouch ){
+					if(Vector3.Distance(_results.position,lastPosition) > 0 || Quaternion.Angle(_results.rotation,lastRotation) > 0 || _results.crouching != lastCrouch || constantUpdate ){
 						_results.timeStamp = _inputs.timeStamp;
 						//Struct need to be fully new to count as dirty 
 						syncResults = _results;
@@ -129,6 +130,7 @@ public class NetworkMovement : NetworkBehaviour {
 				_inputsList.RemoveAt(0);
 				Vector3 lastPosition = _results.position;
 				Quaternion lastRotation = _results.rotation;
+				bool lastCrouch = _results.crouching;
 				_results.rotation = Rotate(inputs,_results);
 				_results.crouching = Crouch(inputs,_results);
 				_results.sprinting = Sprint(inputs,_results);
@@ -136,7 +138,7 @@ public class NetworkMovement : NetworkBehaviour {
 				//Sending results to other clients(state sync)
 
 				if(_dataStep >= GetNetworkSendInterval()){
-					if(Vector3.Distance(_results.position,lastPosition) > 0 || Quaternion.Angle(_results.rotation,lastRotation) > 0){
+					if(Vector3.Distance(_results.position,lastPosition) > 0 || Quaternion.Angle(_results.rotation,lastRotation) > 0 || _results.crouching != lastCrouch || constantUpdate){
 						_results.timeStamp = inputs.timeStamp;
 						syncResults = _results;
 					}
