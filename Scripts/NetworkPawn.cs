@@ -55,7 +55,7 @@ public class NetworkPawn : NetworkMovement {
 		} else {
 			_verticalSpeed = inputs.vertical * Physics.gravity.magnitude;
 		}
-		characterController.Move ((Vector3.ClampMagnitude(new Vector3(inputs.sides,0,inputs.forward),1) * speed + new Vector3(0,_verticalSpeed,0) ) * Time.fixedDeltaTime);
+		characterController.Move (pawn.TransformDirection((Vector3.ClampMagnitude(new Vector3(inputs.sides,0,inputs.forward),1) * speed) + new Vector3(0,_verticalSpeed,0) ) * Time.fixedDeltaTime);
 		return pawn.position;
 
 	}
@@ -76,11 +76,11 @@ public class NetworkPawn : NetworkMovement {
 
 	public override void UpdatePosition (Vector3 newPosition)
 	{
-		pawn.position = newPosition;
+		characterController.Move (newPosition - pawn.position);
 	}
 
 	public override void UpdateRotation (Quaternion newRotation)
 	{
-		pawn.rotation = newRotation;
+		pawnRotation = newRotation;
 	}
 }
