@@ -53,6 +53,14 @@ public class NetworkMovement : NetworkBehaviour {
 
 	private float _step = 0;
 
+	public void SetStartPosition(Vector3 position){
+		_results.position = position;
+	}
+
+	public void SetStartRotation(Quaternion rotation){
+		_results.rotation = rotation;
+	}
+
 	void Update(){
 		if (isLocalPlayer) {
 			//Getting clients inputs
