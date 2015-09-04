@@ -34,7 +34,7 @@ public class NetworkPawn : NetworkMovement {
 				_jump = false;
 			}
 		}
-		inputs.vertical = Mathf.Lerp (inputs.vertical, verticalTarget, 20 * Time.fixedDeltaTime);
+		inputs.vertical = Mathf.Lerp (inputs.vertical, verticalTarget, 10 * Time.deltaTime);
 	}
 
 

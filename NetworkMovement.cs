@@ -149,6 +149,7 @@ public class NetworkMovement : NetworkBehaviour {
 				if(!_playData){
 					return;
 				}
+				Debug.Log (_resultsList.Count );
 				_step = 1/(GetNetworkSendInterval()) ;
 				_dataStep += _step * Time.fixedDeltaTime;
 				_results.rotation = Quaternion.Slerp(_results.rotation,_resultsList[0].rotation,_dataStep);
@@ -253,7 +254,7 @@ public class NetworkMovement : NetworkBehaviour {
 				_jumping = false;
 			}
 		}
-		inputs.vertical = Mathf.Lerp (inputs.vertical, verticalTarget, 20 * Time.fixedDeltaTime);
+		inputs.vertical = Mathf.Lerp (inputs.vertical, verticalTarget, 20 * Time.deltaTime);
 	}
 	
 	sbyte RoundToLargest(float inp){
