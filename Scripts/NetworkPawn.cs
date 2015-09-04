@@ -7,6 +7,7 @@ public class NetworkPawn : NetworkMovement {
 	public CharacterController characterController;
 	public Quaternion pawnRotation;
 	public float verticalMouseLookLimit=170;
+	public float _snapDistance = 1;
 	private float _verticalSpeed = 0;
 	public float _jumpHeight = 10;
 	private bool _jump = false;
@@ -76,7 +77,12 @@ public class NetworkPawn : NetworkMovement {
 
 	public override void UpdatePosition (Vector3 newPosition)
 	{
-		characterController.Move (newPosition - pawn.position);
+		if (Vector3.Distance (newPosition, pawn.position) > _snapDistance) {
+			pawn.position = newPosition;
+		} else {
+			characterController.Move (newPosition - pawn.position);
+		}
+
 	}
 
 	public override void UpdateRotation (Quaternion newRotation)

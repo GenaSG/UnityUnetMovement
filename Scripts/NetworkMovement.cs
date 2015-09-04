@@ -7,7 +7,7 @@ using System.Collections.Generic;
 //QoS channels used:
 //channel #0: Reliable Sequenced
 //channel #1: Unreliable
-[NetworkSettings(channel=0,sendInterval=0.04f)]
+[NetworkSettings(channel=0,sendInterval=0.05f)]
 public class NetworkMovement : NetworkBehaviour {
 	public bool constantUpdate = false;
 	//This struct would be used to collect player inputs
@@ -53,6 +53,8 @@ public class NetworkMovement : NetworkBehaviour {
 	private bool _jumping = false;
 	private Vector3 _startPosition;
 	private Quaternion _startRotation;
+
+
 
 	private float _step = 0;
 
@@ -151,6 +153,7 @@ public class NetworkMovement : NetworkBehaviour {
 				//Non-owner client a.k.a. dummy client
 				//there should be at least two records in the results list so it would be possible to interpolate between them in case if there would be some dropped packed or latency spike
 				//And yes this stupid structure should be here because it should start playing data when there are at least two records and continue playing even if there is only one record left 
+				Debug.Log (_resultsList.Count);
 				if(_resultsList.Count == 0){
 
 					_playData = false;
@@ -158,28 +161,26 @@ public class NetworkMovement : NetworkBehaviour {
 				if(_resultsList.Count >=2){
 					_playData = true;
 				}
-				if(!_playData){
-					return;
+				if(_playData){
+					if(_dataStep==0){
+						_startPosition = _results.position;
+						_startRotation = _results.rotation;
+					}
+					_step = 1/(GetNetworkSendInterval()) ;
+					_results.rotation = Quaternion.Slerp(_startRotation,_resultsList[0].rotation,_dataStep);
+					_results.position = Vector3.Lerp(_startPosition,_resultsList[0].position,_dataStep);
+					_results.crouching = _resultsList[0].crouching;
+					_results.sprinting = _resultsList[0].sprinting;
+					_dataStep += _step * Time.fixedDeltaTime;
+					if(_dataStep>= 1){
+						_dataStep = 0;
+						_resultsList.RemoveAt(0);
+					}
 				}
-				if(_dataStep==0){
-					_startPosition = _results.position;
-					_startRotation = _results.rotation;
-				}
-				_step = 1/(GetNetworkSendInterval()) ;
-				_dataStep += _step * Time.fixedDeltaTime;
-				_results.rotation = Quaternion.Slerp(_startRotation,_resultsList[0].rotation,_dataStep);
-				_results.position = Vector3.Lerp(_startPosition,_resultsList[0].position,_dataStep);
-				_results.crouching = _resultsList[0].crouching;
-				_results.sprinting = _resultsList[0].sprinting;
 				UpdateRotation(_results.rotation);
 				UpdatePosition(_results.position);
 				UpdateCrouch(_results.crouching );
 				UpdateSprinting(_results.sprinting );
-				if(_dataStep>= 1){
-					_dataStep = 0;
-					_resultsList.RemoveAt(0);
-
-				}
 			}
 		}
 	}

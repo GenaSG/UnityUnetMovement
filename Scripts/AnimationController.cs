@@ -14,7 +14,7 @@ public class AnimationController : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		_velocity = Vector3.Lerp (_velocity, _networkPawn.pawn.InverseTransformDirection(_characterController.velocity), 10 * Time.deltaTime);
+		_velocity = Vector3.Lerp (_velocity, _networkPawn.pawn.InverseTransformDirection(_characterController.velocity), 5 * Time.deltaTime);
 
 		_animator.SetFloat ("forward", _velocity.z);
 		_animator.SetFloat ("sides",_velocity.x);
