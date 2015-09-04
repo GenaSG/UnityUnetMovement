@@ -5,6 +5,8 @@ public class NetworkPawn : NetworkMovement {
 	public Transform pawn;
 	public float mouseSens = 100;
 	public CharacterController characterController;
+	public Quaternion pawnRotation;
+	public float verticalMouseLookLimit=170;
 	private float _verticalSpeed = 0;
 	public float _jumpHeight = 10;
 	private bool _jump = false;
@@ -66,8 +68,10 @@ public class NetworkPawn : NetworkMovement {
 		
 		if (mVert > 180)
 			mVert -= 360;
-		pawn.rotation = Quaternion.Euler (mVert, mHor, 0);
-		return pawn.rotation;
+		mVert = Mathf.Clamp (mVert, -verticalMouseLookLimit * 0.5f, verticalMouseLookLimit * 0.5f);
+		pawn.rotation = Quaternion.Euler (0, mHor, 0);
+		pawnRotation = Quaternion.Euler (mVert, mHor, 0);
+		return pawnRotation;
 	}
 
 	public override void UpdatePosition (Vector3 newPosition)
