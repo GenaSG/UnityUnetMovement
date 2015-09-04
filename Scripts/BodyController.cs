@@ -3,6 +3,8 @@ using System.Collections;
 
 public class BodyController : MonoBehaviour {
 	public Animator _animator;
+	public Camera _camera;
+	public AudioListener _audioListener;
 	public NetworkPawn _networkPawn;
 	private Transform _head;
 	private Transform _spine;
@@ -16,6 +18,11 @@ public class BodyController : MonoBehaviour {
 	
 	// Update is called once per frame
 	void LateUpdate () {
+		if (_networkPawn.isLocalPlayer && !_camera.enabled) {
+			_camera.enabled = true;
+			_audioListener.enabled = true;
+		}
+
 		Quaternion targetRotation = Quaternion.Euler(_networkPawn.pawnRotation.eulerAngles.x + _networkPawn.pawn.eulerAngles.x,_networkPawn.pawn.eulerAngles.y,_networkPawn.pawn.eulerAngles.z);
 		//Getting delta rotations
 		_spine.rotation = Quaternion.Slerp(_spine.rotation,targetRotation,0.3f);
