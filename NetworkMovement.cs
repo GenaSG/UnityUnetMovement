@@ -7,7 +7,7 @@ using System.Collections.Generic;
 //QoS channels used:
 //channel #0: Reliable Sequenced
 //channel #1: Unreliable
-[NetworkSettings(channel=0,sendInterval=0.05f)]
+[NetworkSettings(channel=0,sendInterval=0.04f)]
 public class NetworkMovement : NetworkBehaviour {
 	//This struct would be used to collect player inputs
 	public struct Inputs			
@@ -157,7 +157,7 @@ public class NetworkMovement : NetworkBehaviour {
 				if(!_playData){
 					return;
 				}
-				Debug.Log (_resultsList.Count );
+
 				_step = 1/(GetNetworkSendInterval()) ;
 				_dataStep += _step * Time.fixedDeltaTime;
 				_results.rotation = Quaternion.Slerp(_results.rotation,_resultsList[0].rotation,_dataStep);
