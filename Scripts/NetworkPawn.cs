@@ -81,6 +81,7 @@ public class NetworkPawn : NetworkMovement {
 
 	public override void UpdateRotation (Quaternion newRotation)
 	{
+		pawn.rotation = Quaternion.Euler (0, newRotation.eulerAngles.y, 0);
 		pawnRotation = newRotation;
 	}
 }
