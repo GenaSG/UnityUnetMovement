@@ -85,9 +85,7 @@ public class NetworkMovement : NetworkBehaviour {
 	void FixedUpdate(){
 		if (isLocalPlayer) {
 
-			//Getting clients inputs
 			_inputs.timeStamp = Time.time;
-			Debug.Log("_inputsList.Count = " + _inputsList.Count);
 			//Client side prediction for non-authoritative client or plane movement and rotation for listen server/host
 			Vector3 lastPosition = _results.position;
 			Quaternion lastRotation = _results.rotation;
@@ -125,11 +123,14 @@ public class NetworkMovement : NetworkBehaviour {
 				//Sending inputs to the server
 				//Unfortunately there is now method overload for [Command] so I need to write several almost similar functions
 				//This one is needed to save on network traffic
+				sbyte forward = (sbyte)(_inputs.forward * 127);
+				sbyte sides = (sbyte)(_inputs.sides * 127);
+				sbyte vertical = (sbyte)(_inputs.vertical * 127);
 				if(Vector3.Distance(_results.position,lastPosition) > 0 ){
 					if(Quaternion.Angle(_results.rotation,lastRotation) > 0){
-						Cmd_MovementRotationInputs(_inputs.forward,_inputs.sides,_inputs.vertical,_inputs.pitch,_inputs.yaw,_inputs.sprint,_inputs.crouch,_inputs.timeStamp);
+						Cmd_MovementRotationInputs(forward,sides,vertical,_inputs.pitch,_inputs.yaw,_inputs.sprint,_inputs.crouch,_inputs.timeStamp);
 					}else{
-						Cmd_MovementInputs(_inputs.forward,_inputs.sides,_inputs.vertical,_inputs.sprint,_inputs.crouch,_inputs.timeStamp);
+						Cmd_MovementInputs(forward,sides,vertical,_inputs.sprint,_inputs.crouch,_inputs.timeStamp);
 					}
 				}else{
 					if(Quaternion.Angle(_results.rotation,lastRotation) > 0){
@@ -245,12 +246,12 @@ public class NetworkMovement : NetworkBehaviour {
 	}
 	//Rotation and movement inputs sent 
 	[Command(channel = 0)]
-	void Cmd_MovementRotationInputs(float forward, float sides,float vertical,float pitch,float yaw,bool sprint,bool crouch,float timeStamp){
+	void Cmd_MovementRotationInputs(sbyte forward, sbyte sides,sbyte vertical,float pitch,float yaw,bool sprint,bool crouch,float timeStamp){
 		if (hasAuthority && !isLocalPlayer) {
 			Inputs inputs;
-			inputs.forward = Mathf.Clamp(forward,-1,1);
-			inputs.sides = Mathf.Clamp(sides,-1,1);
-			inputs.vertical = Mathf.Clamp(vertical,-1,1);
+			inputs.forward = Mathf.Clamp((float)forward/127,-1,1);
+			inputs.sides = Mathf.Clamp((float)sides/127,-1,1);
+			inputs.vertical = Mathf.Clamp((float)vertical/127,-1,1);
 			inputs.pitch = pitch;
 			inputs.yaw = yaw;
 			inputs.sprint = sprint;
@@ -262,12 +263,12 @@ public class NetworkMovement : NetworkBehaviour {
 
 	//Only movements inputs sent
 	[Command(channel = 0)]
-	void Cmd_MovementInputs(float forward, float sides,float vertical,bool sprint,bool crouch,float timeStamp){
+	void Cmd_MovementInputs(sbyte forward, sbyte sides,sbyte vertical,bool sprint,bool crouch,float timeStamp){
 		if (hasAuthority && !isLocalPlayer) {
 			Inputs inputs;
-			inputs.forward = Mathf.Clamp(forward,-1,1);
-			inputs.sides = Mathf.Clamp(sides,-1,1);
-			inputs.vertical = Mathf.Clamp(vertical,-1,1);
+			inputs.forward = Mathf.Clamp((float)forward/127,-1,1);
+			inputs.sides = Mathf.Clamp((float)sides/127,-1,1);
+			inputs.vertical = Mathf.Clamp((float)vertical/127,-1,1);
 			inputs.pitch = 0;
 			inputs.yaw = 0;
 			inputs.sprint = sprint;
