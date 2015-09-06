@@ -9,7 +9,6 @@ using System.Collections.Generic;
 //channel #1: Unreliable
 [NetworkSettings(channel=0,sendInterval=0.05f)]
 public class NetworkMovement : NetworkBehaviour {
-	public bool constantUpdate = false;
 	//This struct would be used to collect player inputs
 	public struct Inputs			
 	{
@@ -33,12 +32,22 @@ public class NetworkMovement : NetworkBehaviour {
 		public float timeStamp;
 	}
 
+	public struct SyncResults
+	{
+		public ushort yaw;
+		public ushort pitch;
+		public Vector3 position;
+		public bool sprinting;
+		public bool crouching;
+		public float timeStamp;
+	}
+
 
 	private Inputs _inputs;
 
 	//Synced from server to all clients
 	[SyncVar(hook="RecieveResults")]
-	private Results syncResults;
+	private SyncResults syncResults;
 
 	private Results _results;
 
@@ -78,6 +87,7 @@ public class NetworkMovement : NetworkBehaviour {
 
 			//Getting clients inputs
 			_inputs.timeStamp = Time.time;
+			Debug.Log("_inputsList.Count = " + _inputsList.Count);
 			//Client side prediction for non-authoritative client or plane movement and rotation for listen server/host
 			Vector3 lastPosition = _results.position;
 			Quaternion lastRotation = _results.rotation;
@@ -90,10 +100,18 @@ public class NetworkMovement : NetworkBehaviour {
 				//Listen server/host part
 				//Sending results to other clients(state sync)
 				if(_dataStep >= GetNetworkSendInterval()){
-					if(Vector3.Distance(_results.position,lastPosition) > 0 || Quaternion.Angle(_results.rotation,lastRotation) > 0 || _results.crouching != lastCrouch || constantUpdate ){
+					if(Vector3.Distance(_results.position,lastPosition) > 0 || Quaternion.Angle(_results.rotation,lastRotation) > 0 || _results.crouching != lastCrouch ){
 						_results.timeStamp = _inputs.timeStamp;
 						//Struct need to be fully new to count as dirty 
-						syncResults = _results;
+						//Convering some of the values to get less traffic
+						SyncResults tempResults;
+						tempResults.yaw = (ushort)(_results.rotation.eulerAngles.y * 182);
+						tempResults.pitch = (ushort)(_results.rotation.eulerAngles.x * 182);
+						tempResults.position = _results.position;
+						tempResults.sprinting = _results.sprinting;
+						tempResults.crouching = _results.crouching;
+						tempResults.timeStamp = _results.timeStamp;
+						syncResults = tempResults;
 					}
 					_dataStep = 0;
 				}
@@ -142,9 +160,18 @@ public class NetworkMovement : NetworkBehaviour {
 				//Sending results to other clients(state sync)
 
 				if(_dataStep >= GetNetworkSendInterval()){
-					if(Vector3.Distance(_results.position,lastPosition) > 0 || Quaternion.Angle(_results.rotation,lastRotation) > 0 || _results.crouching != lastCrouch || constantUpdate){
+					if(Vector3.Distance(_results.position,lastPosition) > 0 || Quaternion.Angle(_results.rotation,lastRotation) > 0 || _results.crouching != lastCrouch){
+						//Struct need to be fully new to count as dirty 
+						//Convering some of the values to get less traffic
 						_results.timeStamp = inputs.timeStamp;
-						syncResults = _results;
+						SyncResults tempResults;
+						tempResults.yaw = (ushort)(_results.rotation.eulerAngles.y * 182);
+						tempResults.pitch = (ushort)(_results.rotation.eulerAngles.x * 182);
+						tempResults.position = _results.position;
+						tempResults.sprinting = _results.sprinting;
+						tempResults.crouching = _results.crouching;
+						tempResults.timeStamp = _results.timeStamp;
+						syncResults = tempResults;
 					}
 					_dataStep = 0;
 				}
@@ -334,7 +361,15 @@ public class NetworkMovement : NetworkBehaviour {
 
 	//Updating Clients with server states
 	[ClientCallback]
-	void RecieveResults(Results results){
+	void RecieveResults(SyncResults syncResults){ 
+		//Convering values back
+		Results results;
+		results.rotation = Quaternion.Euler ((float)syncResults.pitch/182,(float)syncResults.yaw/182,0);
+		results.position = syncResults.position;
+		results.sprinting = syncResults.sprinting;
+		results.crouching = syncResults.crouching;
+		results.timeStamp = syncResults.timeStamp;
+
 		//Discard out of order results
 		if (results.timeStamp <= _lastTimeStamp) {
 			return;
