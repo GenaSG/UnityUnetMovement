@@ -6,7 +6,7 @@ using System.Collections.Generic;
 //Author:gennadiy.shvetsov@gmail.com
 //QoS channels used:
 //channel #0: Reliable Sequenced
-//channel #1: Reliable Sequenced
+//channel #1: Unreliable Sequenced
 [NetworkSettings(channel=1,sendInterval=0.05f)]
 public class NetworkMovement : NetworkBehaviour {
 	//This struct would be used to collect player inputs
