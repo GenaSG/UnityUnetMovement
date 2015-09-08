@@ -22,6 +22,20 @@ public class NetworkMovement : NetworkBehaviour {
 
 		public float timeStamp;
 	}
+
+	public struct SyncInputs			
+	{
+		public sbyte forward;
+		public sbyte sides;
+		public float yaw;
+		public sbyte vertical;
+		public float pitch;
+		public bool sprint;
+		public bool crouch;
+		
+		public float timeStamp;
+	}
+
 	//This struct would be used to collect results of Move and Rotate functions
 	public struct Results
 	{
@@ -123,14 +137,15 @@ public class NetworkMovement : NetworkBehaviour {
 				//Sending inputs to the server
 				//Unfortunately there is now method overload for [Command] so I need to write several almost similar functions
 				//This one is needed to save on network traffic
-				sbyte forward = (sbyte)(_inputs.forward * 127);
-				sbyte sides = (sbyte)(_inputs.sides * 127);
-				sbyte vertical = (sbyte)(_inputs.vertical * 127);
+				SyncInputs syncInputs;
+				syncInputs.forward = (sbyte)(_inputs.forward * 127);
+				syncInputs.sides = (sbyte)(_inputs.sides * 127);
+				syncInputs.vertical = (sbyte)(_inputs.vertical * 127);
 				if(Vector3.Distance(_results.position,lastPosition) > 0 ){
 					if(Quaternion.Angle(_results.rotation,lastRotation) > 0){
-						Cmd_MovementRotationInputs(forward,sides,vertical,_inputs.pitch,_inputs.yaw,_inputs.sprint,_inputs.crouch,_inputs.timeStamp);
+						Cmd_MovementRotationInputs(syncInputs.forward,syncInputs.sides,syncInputs.vertical,_inputs.pitch,_inputs.yaw,_inputs.sprint,_inputs.crouch,_inputs.timeStamp);
 					}else{
-						Cmd_MovementInputs(forward,sides,vertical,_inputs.sprint,_inputs.crouch,_inputs.timeStamp);
+						Cmd_MovementInputs(syncInputs.forward,syncInputs.sides,syncInputs.vertical,_inputs.sprint,_inputs.crouch,_inputs.timeStamp);
 					}
 				}else{
 					if(Quaternion.Angle(_results.rotation,lastRotation) > 0){
@@ -181,9 +196,7 @@ public class NetworkMovement : NetworkBehaviour {
 				//Non-owner client a.k.a. dummy client
 				//there should be at least two records in the results list so it would be possible to interpolate between them in case if there would be some dropped packed or latency spike
 				//And yes this stupid structure should be here because it should start playing data when there are at least two records and continue playing even if there is only one record left 
-				Debug.Log (_resultsList.Count);
 				if(_resultsList.Count == 0){
-
 					_playData = false;
 				}
 				if(_resultsList.Count >=2){
