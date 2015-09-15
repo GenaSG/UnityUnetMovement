@@ -3,11 +3,20 @@ using System.Collections;
 using UnityEngine.Networking;
 
 public class ItemScript : NetworkBehaviour {
-	public GameObject actualItem;
+	public int slot;
 
-	void OnTriggerEnter(Collider other){
-		if (hasAuthority) {
-			other.SendMessageUpwards("GiveItem",actualItem,SendMessageOptions.DontRequireReceiver);
-		}
+
+	public void GiveAmmo(int amount){
+
+	}
+
+	// Use this for initialization
+	void Start () {
+	
+	}
+	
+	// Update is called once per frame
+	void Update () {
+	
 	}
 }

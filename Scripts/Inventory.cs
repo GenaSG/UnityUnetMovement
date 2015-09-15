@@ -3,25 +3,33 @@ using System.Collections;
 using UnityEngine.Networking;
 using System.Collections.Generic;
 
+public struct PickupInfo{
+	public int itemIndex;
+	public int itemAmmo;
+}
 
 public class Inventory : NetworkBehaviour {
-	public List<GameObject> items = new List<GameObject>();
+	public int maxSlotsCount = 6;
+	public SyncListInt _slots= new SyncListInt ();
+	
+	[SyncVar]
+	public int _currentItem;
 
-	public void GiveItem(GameObject item){
+	public ItemScript[] _availableItems;
+
+	public void GiveItem(PickupInfo itemInfo){
 		if (hasAuthority) {
-			Debug.Log("Spawn item");
-			GameObject newItem = (GameObject)Instantiate(item);
-			NetworkServer.Spawn(newItem);
-			Rpc_RegistreItem(newItem.GetComponent<NetworkIdentity>().netId);
-			items.Add(newItem);
+			if(_slots.Count != maxSlotsCount){
+				for(int i =0;i < maxSlotsCount;i++){
+					_slots.Add(0);
+				}
+			}
+			if(_slots[_availableItems[itemInfo.itemIndex].slot] == itemInfo.itemIndex){
+				_availableItems[itemInfo.itemIndex].GiveAmmo(itemInfo.itemAmmo);
+			}else{
+				_slots[_availableItems[itemInfo.itemIndex].slot] = itemInfo.itemIndex;
+				_availableItems[itemInfo.itemIndex].GiveAmmo(itemInfo.itemAmmo);
+			}
 		}
-	}
-	[ClientRpc]
-	void Rpc_RegistreItem(NetworkInstanceId id){
-		if (!hasAuthority) {
-			Debug.Log("Pistol ID = " + id.ToString());
-			GameObject item = ClientScene.FindLocalObject (id);
-			items.Add(item);
-		}
-	}
+	}	
 }
