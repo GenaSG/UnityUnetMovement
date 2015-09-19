@@ -1,8 +1,8 @@
 ﻿using UnityEngine;
 using System.Collections;
-using UnityEngine.Networking;
 
-public class ItemScript : NetworkBehaviour {
+
+public class ItemScript : MonoBehaviour {
 	public int slot;
 
 
