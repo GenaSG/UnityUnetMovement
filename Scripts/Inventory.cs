@@ -17,6 +17,7 @@ public class Inventory : NetworkBehaviour {
 
 	private int _input;
 	public int _currentSlot = 0;
+	public int _lastSlot = -1;
 	public ItemScript[] _availableItems;//Array of available items specific to this entity
 
 
@@ -65,6 +66,23 @@ public class Inventory : NetworkBehaviour {
 		} else {
 			if(!hasAuthority){
 				_currentSlot = _syncSlot;
+			}
+		}
+		//Actual switching
+		if (_slots.Count > 0 && _currentSlot < _slots.Count && _availableItems [_slots [_currentSlot]]) {
+			//Disabling last item
+			if(_lastSlot >=0 && _lastSlot != _currentSlot ){
+				if(_availableItems [_slots [_lastSlot]].selected){
+					_availableItems [_slots [_lastSlot]].Deselect();
+				}else{
+					_lastSlot = _currentSlot;
+				}
+			}else{
+				_lastSlot = _currentSlot;
+			}
+			//Enabling new item
+			if(!_availableItems [_slots [_currentSlot]].selected){
+				_availableItems [_slots [_currentSlot]].Select();
 			}
 		}
 	}
