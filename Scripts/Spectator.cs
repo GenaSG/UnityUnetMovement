@@ -15,6 +15,8 @@ public class Spectator : NetworkBehaviour {
 		if (hasAuthority) {
 			Transform spawn = NetworkManager.singleton.GetStartPosition ();
 			GameObject player = (GameObject)Instantiate (playerPrefab, spawn.position, spawn.rotation);
+			player.SendMessage("SetStartPosition",spawn.position,SendMessageOptions.DontRequireReceiver);
+			player.SendMessage("SetStartRotation",spawn.rotation,SendMessageOptions.DontRequireReceiver);
 			NetworkServer.Destroy (this.gameObject);
 			NetworkServer.ReplacePlayerForConnection (this.connectionToClient, player, this.playerControllerId);
 		}
