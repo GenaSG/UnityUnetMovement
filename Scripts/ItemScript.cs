@@ -5,21 +5,30 @@ using System.Collections;
 public class ItemScript : MonoBehaviour {
 	public int slot;
 	public bool selected = false;
-
+	public int AnimationType = 0;
+	public Animator animator;
 	public void GiveAmmo(int amount){
 
 	}
 
 	public void Select(){
-		selected = true;
-		gameObject.SetActive (true);
-		Debug.Log ("Selecting");
+		if (animator.GetBool ("Holstered")) {
+			selected = true;
+			animator.SetInteger ("AnimationType", AnimationType);
+			animator.SetBool ("Holster", false);
+			gameObject.SetActive (true);
+			Debug.Log ("Selecting");
+		}
 	}
 
 	public void Deselect(){
-		selected = false;
-		gameObject.SetActive (false);
-		Debug.Log ("Deselecting");
+		if (animator.GetBool ("Holstered")) {
+			selected = false;
+			gameObject.SetActive (false);
+			Debug.Log ("Deselecting");
+		} else {
+			animator.SetBool ("Holster",true);
+		}
 	}
 
 	// Use this for initialization
