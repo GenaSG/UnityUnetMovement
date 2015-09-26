@@ -7,6 +7,8 @@ public class ItemScript : MonoBehaviour {
 	public bool selected = false;
 	public int AnimationType = 0;
 	public Animator animator;
+	public Transform Aimpoint;
+
 	public void GiveAmmo(int amount){
 
 	}

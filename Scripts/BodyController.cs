@@ -6,28 +6,47 @@ public class BodyController : MonoBehaviour {
 	public Camera _camera;
 	public AudioListener _audioListener;
 	public NetworkPawn _networkPawn;
+	public float _aimPower;
+	public Inventory _inventory;
+	private Quaternion _targerHeadRotation;
+	private Quaternion _targetChestRotation;
+	private Quaternion _targetSpineRotation;
 	private Transform _head;
-	private Transform _spine;
 	private Transform _chest;
+	private Transform _spine;
+	private bool _updateRotations = false;
+
 	// Use this for initialization
 	void Start () {
 		_head = _animator.GetBoneTransform (HumanBodyBones.Head);
 		_spine = _animator.GetBoneTransform (HumanBodyBones.Spine);
 		_chest = _animator.GetBoneTransform (HumanBodyBones.Chest);
+
 	}
 	
 	// Update is called once per frame
-	void LateUpdate () {
+	void Update () {
 		if (_networkPawn.isLocalPlayer && !_camera.enabled) {
 			_camera.enabled = true;
 			_audioListener.enabled = true;
 		}
+	}
 
-		Quaternion targetRotation = Quaternion.Euler(_networkPawn.pawnRotation.eulerAngles.x + _networkPawn.pawn.eulerAngles.x,_networkPawn.pawn.eulerAngles.y,_networkPawn.pawn.eulerAngles.z);
-		//Getting delta rotations
-		_spine.rotation = Quaternion.Slerp(_spine.rotation,targetRotation,0.3f);
-		_chest.rotation = Quaternion.Slerp(_chest.rotation,targetRotation,0.3f);
+	public void SetTargetRotations(Quaternion targerHeadRotation, Quaternion targetChestRotation,Quaternion targetSpineRotation){
+		_targerHeadRotation = targerHeadRotation;
+		_targetChestRotation = targetChestRotation;
+		_targetSpineRotation = targetSpineRotation;
+		_updateRotations = true;
+	}
 
-		_head.rotation = targetRotation;
+	void LateUpdate(){
+		if (_updateRotations) {
+			_spine.rotation = _targetSpineRotation;
+			_chest.rotation = _targetChestRotation;
+			_head.rotation = _targerHeadRotation;
+
+			_updateRotations = false;
+		}
+
 	}
 }
