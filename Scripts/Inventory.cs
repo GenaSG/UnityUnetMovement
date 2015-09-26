@@ -50,7 +50,7 @@ public class Inventory : NetworkBehaviour {
 		_currentSlot = slot; 
 	}
 
-	void Update(){
+	void LateUpdate(){
 		if (isLocalPlayer) {
 			//Get player inputs
 			GetInputs ();
