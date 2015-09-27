@@ -10,15 +10,19 @@ public struct PickupInfo{
 [NetworkSettings(channel=0,sendInterval=0.05f)]
 public class Inventory : NetworkBehaviour {
 	public int maxSlotsCount = 6;
+	public int _currentSlot = 0;
+	public ItemScript[] _availableItems;//Array of available items specific to this entity
+
 	public SyncListInt _slots= new SyncListInt ();//List of item index to sync over network
 	
 	[SyncVar]
 	private int _syncSlot;//Selected slot
 
 	private int _input;
-	public int _currentSlot = 0;
-	public int _lastSlot = -1;
-	public ItemScript[] _availableItems;//Array of available items specific to this entity
+
+	private int _lastSlot = -1;
+
+	private bool _holster = false;
 
 
 	public void GiveItem(PickupInfo itemInfo){
@@ -69,20 +73,26 @@ public class Inventory : NetworkBehaviour {
 			}
 		}
 		//Actual switching
-		if (_slots.Count > 0 && _currentSlot < _slots.Count && _availableItems [_slots [_currentSlot]]) {
-			//Disabling last item
-			if(_lastSlot >=0 && _lastSlot != _currentSlot ){
-				if(_availableItems [_slots [_lastSlot]].selected){
-					_availableItems [_slots [_lastSlot]].Deselect();
-				}else{
+		if (_holster) {
+			if (_availableItems [_slots [_currentSlot]].selected){
+				_availableItems [_slots [_currentSlot]].Deselect ();
+			}
+		} else {
+			if (_slots.Count > 0 && _currentSlot < _slots.Count && _availableItems [_slots [_currentSlot]]) {
+				//Disabling last item
+				if (_lastSlot >= 0 && _lastSlot != _currentSlot) {
+					if (_availableItems [_slots [_lastSlot]].selected) {
+						_availableItems [_slots [_lastSlot]].Deselect ();
+					} else {
+						_lastSlot = _currentSlot;
+					}
+				} else {
 					_lastSlot = _currentSlot;
 				}
-			}else{
-				_lastSlot = _currentSlot;
-			}
-			//Enabling new item
-			if(!_availableItems [_slots [_currentSlot]].selected){
-				_availableItems [_slots [_currentSlot]].Select();
+				//Enabling new item
+				if (!_availableItems [_slots [_currentSlot]].selected) {
+					_availableItems [_slots [_currentSlot]].Select ();
+				}
 			}
 		}
 	}
@@ -100,6 +110,10 @@ public class Inventory : NetworkBehaviour {
 			_input = 4;
 		} else if (Input.GetButtonDown ("Slot6")) {
 			_input = 5;
+		}
+
+		if (Input.GetButtonDown ("Holster")) {
+			_holster = !_holster;
 		}
 	}
 

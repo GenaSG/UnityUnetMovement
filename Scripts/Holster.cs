@@ -2,17 +2,25 @@
 using System.Collections;
 
 public class Holster : StateMachineBehaviour {
-
+	private float _power = 0;
 	 // OnStateEnter is called when a transition starts and the state machine starts to evaluate this state
-	override public void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex) {
-		animator.SetBool ("Holstered", true);
-		animator.SetBool ("Holster", false);
-	}
-
-	// OnStateUpdate is called on each Update frame between OnStateEnter and OnStateExit callbacks
-	//override public void OnStateUpdate(Animator animator, AnimatorStateInfo stateInfo, int layerIndex) {
+	//override public void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex) {
 	//
 	//}
+
+	// OnStateUpdate is called on each Update frame between OnStateEnter and OnStateExit callbacks
+	override public void OnStateUpdate(Animator animator, AnimatorStateInfo stateInfo, int layerIndex) {
+		AnimatorTransitionInfo info = animator.GetAnimatorTransitionInfo (layerIndex);
+		if (animator.GetNextAnimatorStateInfo(layerIndex).GetHashCode() == stateInfo.GetHashCode()) { //Entering the state
+			_power = info.normalizedTime;
+		}else if(animator.GetCurrentAnimatorStateInfo(layerIndex).GetHashCode() == stateInfo.GetHashCode()){ //Exiting the state
+			_power = (1-info.normalizedTime);
+		}
+		if (_power > 0.98f) {
+			animator.SetBool ("Holstered", true);
+			animator.SetBool ("Holster", false);
+		}
+	}
 
 	// OnStateExit is called when a transition ends and the state machine finishes evaluating this state
 	override public void OnStateExit(Animator animator, AnimatorStateInfo stateInfo, int layerIndex) {

@@ -39,10 +39,10 @@ public class MouseLook : StateMachineBehaviour {
 
 	void UpdateStatePower(Animator animator, AnimatorStateInfo stateInfo, int layerIndex){
 		AnimatorTransitionInfo info = animator.GetAnimatorTransitionInfo (layerIndex);
-		//Entering the state
-		if (animator.GetNextAnimatorStateInfo(layerIndex).GetHashCode() == stateInfo.GetHashCode()) {
+
+		if (animator.GetNextAnimatorStateInfo(layerIndex).GetHashCode() == stateInfo.GetHashCode()) { //Entering the state
 			_power = info.normalizedTime;
-		}else if(animator.GetCurrentAnimatorStateInfo(layerIndex).GetHashCode() == stateInfo.GetHashCode()){
+		}else if(animator.GetCurrentAnimatorStateInfo(layerIndex).GetHashCode() == stateInfo.GetHashCode()){ //Exiting the state
 			_power = (1-info.normalizedTime);
 		}
 

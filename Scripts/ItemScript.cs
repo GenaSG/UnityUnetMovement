@@ -29,6 +29,7 @@ public class ItemScript : MonoBehaviour {
 			gameObject.SetActive (false);
 			Debug.Log ("Deselecting");
 		} else {
+			animator.SetInteger ("AnimationType", -1);
 			animator.SetBool ("Holster",true);
 		}
 	}
