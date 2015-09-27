@@ -3,9 +3,11 @@ using System.Collections;
 
 public class MouseLook : StateMachineBehaviour {
 	public bool _aim = false;
+	public float _minPitchTreshold = 0;
+	public float _maxPitchTreshold = 0;
 	private float _power = 0;
 	private ComponentsList _components;
-	private Quaternion _targetRotation;
+//	private Quaternion _targetRotation;
 	private Quaternion _chestDeltaRotation;
 	private Quaternion _spineDeltaRotation;
 	private Transform _head;
@@ -27,16 +29,6 @@ public class MouseLook : StateMachineBehaviour {
 		UpdateStatePower (animator,stateInfo,layerIndex);
 	}
 
-	// OnStateUpdate is called on each Update frame between OnStateEnter and OnStateExit callbacks
-	override public void OnStateUpdate(Animator animator, AnimatorStateInfo stateInfo, int layerIndex) {
-		if (_aim) {
-			return;
-		}
-		UpdateStatePower (animator,stateInfo,layerIndex);
-		UpdateBodyRotations (animator);
-
-	}
-
 	void UpdateStatePower(Animator animator, AnimatorStateInfo stateInfo, int layerIndex){
 		AnimatorTransitionInfo info = animator.GetAnimatorTransitionInfo (layerIndex);
 
@@ -51,10 +43,17 @@ public class MouseLook : StateMachineBehaviour {
 	void UpdateBodyRotations(Animator animator){
 		Quaternion originalSpineRot = _spine.rotation;
 		Quaternion originalChestRot = _chest.rotation;
-		_targetRotation = Quaternion.Euler(_components.networkPawn.pawnRotation.eulerAngles.x + animator.transform.eulerAngles.x,animator.transform.eulerAngles.y,animator.transform.eulerAngles.z);
-		Quaternion delta = Quaternion.Inverse (_head.rotation) * _targetRotation;
-		_chestDeltaRotation = Quaternion.Slerp (delta, Quaternion.identity, 0.8f);
-		_spineDeltaRotation = Quaternion.Slerp (delta, Quaternion.identity, 0.5f);
+		float pitch = _components.networkPawn.pawnRotation.eulerAngles.x;
+		if (pitch > 180)
+			pitch -= 360;
+		pitch *= -1;
+
+		Quaternion _targetRotation = Quaternion.Euler( animator.transform.eulerAngles.x - pitch,animator.transform.eulerAngles.y,animator.transform.eulerAngles.z);
+
+		Quaternion _targetBodyRotation = Quaternion.Euler( animator.transform.eulerAngles.x - (pitch - Mathf.Clamp(pitch,_minPitchTreshold,_maxPitchTreshold)),animator.transform.eulerAngles.y,animator.transform.eulerAngles.z);
+		Quaternion delta = Quaternion.Inverse (_head.rotation) * _targetBodyRotation;
+		_chestDeltaRotation = Quaternion.Slerp (Quaternion.identity, delta, 0.3f);
+		_spineDeltaRotation = Quaternion.Slerp (Quaternion.identity, delta, 0.3f);
 
 
 		_spine.localRotation *= _spineDeltaRotation;
@@ -127,11 +126,10 @@ public class MouseLook : StateMachineBehaviour {
 	
 	// OnStateIK is called right after Animator.OnAnimatorIK(). Code that sets up animation IK (inverse kinematics) should be implemented here.
 	override public void OnStateIK(Animator animator, AnimatorStateInfo stateInfo, int layerIndex) {
-		if (!_aim) {
-			return;
-		}
 		UpdateStatePower (animator,stateInfo,layerIndex);
 		UpdateBodyRotations (animator);
-		UpdateAim(animator);
+		if (_aim) {
+			UpdateAim (animator);
+		}
 	}
 }
