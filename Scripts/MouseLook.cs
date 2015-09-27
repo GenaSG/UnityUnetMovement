@@ -13,6 +13,7 @@ public class MouseLook : StateMachineBehaviour {
 	private Transform _rightHand;
 	private Transform _chest;
 	private Transform _spine;
+	private int _slot = -1;
 
 	 // OnStateEnter is called when a transition starts and the state machine starts to evaluate this state
 	override public void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex) {
@@ -22,6 +23,8 @@ public class MouseLook : StateMachineBehaviour {
 		_rightHand = animator.GetBoneTransform (HumanBodyBones.RightHand);
 		_chest = animator.GetBoneTransform (HumanBodyBones.Chest);
 		_spine = animator.GetBoneTransform (HumanBodyBones.Spine);
+		_slot = _components.inventory._currentSlot;
+		UpdateStatePower (animator,stateInfo,layerIndex);
 	}
 
 	// OnStateUpdate is called on each Update frame between OnStateEnter and OnStateExit callbacks
@@ -36,11 +39,13 @@ public class MouseLook : StateMachineBehaviour {
 
 	void UpdateStatePower(Animator animator, AnimatorStateInfo stateInfo, int layerIndex){
 		AnimatorTransitionInfo info = animator.GetAnimatorTransitionInfo (layerIndex);
+		//Entering the state
 		if (animator.GetNextAnimatorStateInfo(layerIndex).GetHashCode() == stateInfo.GetHashCode()) {
 			_power = info.normalizedTime;
-		} else {
+		}else if(animator.GetCurrentAnimatorStateInfo(layerIndex).GetHashCode() == stateInfo.GetHashCode()){
 			_power = (1-info.normalizedTime);
 		}
+
 	}
 
 	void UpdateBodyRotations(Animator animator){
@@ -64,7 +69,13 @@ public class MouseLook : StateMachineBehaviour {
 		_components.bodyController.SetTargetRotations (_head.rotation,_chest.rotation,_spine.rotation);
 	}
 
+	override public void OnStateExit(Animator animator, AnimatorStateInfo stateInfo, int layerIndex) {
+		_power = 0;
+		UpdateBodyRotations (animator);
+	}
+	
 	void UpdateAim(Animator animator){
+
 		//Need to discard previosly made rotation in order to get correct final hands position
 		_spine.localRotation *= Quaternion.Inverse(_spineDeltaRotation);
 		_chest.localRotation *= Quaternion.Inverse(_chestDeltaRotation);
@@ -72,8 +83,8 @@ public class MouseLook : StateMachineBehaviour {
 		//Aiming
 		Vector3 originalCamPos = _components.bodyController._camera.transform.position;
 		Quaternion originalCamRot = _components.bodyController._camera.transform.rotation;
-		_components.bodyController._camera.transform.position = _components.inventory._availableItems [_components.inventory._slots [_components.inventory._currentSlot]].Aimpoint.position;
-		_components.bodyController._camera.transform.rotation = _components.inventory._availableItems [_components.inventory._slots [_components.inventory._currentSlot]].Aimpoint.rotation;
+		_components.bodyController._camera.transform.position = _components.inventory._availableItems [_components.inventory._slots [_slot]].Aimpoint.position;
+		_components.bodyController._camera.transform.rotation = _components.inventory._availableItems [_components.inventory._slots [_slot]].Aimpoint.rotation;
 		//Translating chest position and rotation to camera space
 		Vector3 localChestPosition = _components.bodyController._camera.transform.InverseTransformPoint (_chest.position);
 		Vector3 localChestUp = _components.bodyController._camera.transform.InverseTransformDirection (_chest.up);
@@ -87,8 +98,8 @@ public class MouseLook : StateMachineBehaviour {
 		Vector3 targetChestForward = _components.bodyController._camera.transform.TransformDirection (localChestForward);
 		Vector3 originalChestPos = _chest.position;
 		Quaternion originalChestRot = _chest.rotation;
-		_chest.position = targetChestPos;
-		_chest.rotation = Quaternion.LookRotation (targetChestForward, targetChestUp);
+		_chest.position = Vector3.Lerp(_chest.position,targetChestPos,_power);
+		_chest.rotation = Quaternion.Slerp(_chest.rotation,Quaternion.LookRotation (targetChestForward, targetChestUp),_power);
 		//Setting IK targets
 		Vector3 leftHandPos = _leftHand.position;
 		Vector3 rightHandPos = _rightHand.position;
