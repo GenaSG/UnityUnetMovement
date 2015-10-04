@@ -8,6 +8,10 @@ public class ItemScript : MonoBehaviour {
 	public int AnimationType = 0;
 	public Animator animator;
 	public Transform Aimpoint;
+	public Transform ShootPoint;
+	public float FireTime = 0.1f;
+	private float _lastFireTime = 0;
+
 
 	public void GiveAmmo(int amount){
 
@@ -42,5 +46,19 @@ public class ItemScript : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
 	
+	}
+
+	public bool Fire1(){
+		if (Time.time >= (_lastFireTime + FireTime)) {
+			_lastFireTime = Time.time;
+
+			return true;
+		} else {
+			return false;
+		}
+
+	}
+	public void Shoot(){
+		ShootPoint.SendMessage ("Play", SendMessageOptions.DontRequireReceiver);
 	}
 }
