@@ -10,7 +10,9 @@ public class ItemScript : MonoBehaviour {
 	public Transform Aimpoint;
 	public Transform ShootPoint;
 	public float FireTime = 0.1f;
+	public Transform hitEffect;
 	private float _lastFireTime = 0;
+
 
 
 	public void GiveAmmo(int amount){
@@ -60,5 +62,9 @@ public class ItemScript : MonoBehaviour {
 	}
 	public void Shoot(){
 		ShootPoint.SendMessage ("Play", SendMessageOptions.DontRequireReceiver);
+		RaycastHit hit;
+		if(Physics.Raycast(ShootPoint.position,ShootPoint.forward,out hit)){
+			Instantiate(hitEffect,hit.point,Quaternion.LookRotation(hit.normal,Vector3.up));
+		}
 	}
 }

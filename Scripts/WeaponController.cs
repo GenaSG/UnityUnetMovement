@@ -46,6 +46,7 @@ public class WeaponController : NetworkBehaviour {
 	[Command]
 	void Cmd_Fire1(){
 		if (_item.Fire1 ()) {
+			_item.Shoot();
 			Rpc_Shoot();
 		}
 	}
