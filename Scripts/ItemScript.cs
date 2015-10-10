@@ -5,12 +5,13 @@ using System.Collections;
 public class ItemScript : MonoBehaviour {
 	public int slot;
 	public bool selected = false;
+	public Transform _bullet;
 	public int AnimationType = 0;
+	public WeaponController _weaponController;
 	public Animator animator;
 	public Transform Aimpoint;
 	public Transform ShootPoint;
 	public float FireTime = 0.1f;
-	public Transform hitEffect;
 	private float _lastFireTime = 0;
 
 
@@ -62,9 +63,7 @@ public class ItemScript : MonoBehaviour {
 	}
 	public void Shoot(){
 		ShootPoint.SendMessage ("Play", SendMessageOptions.DontRequireReceiver);
-		RaycastHit hit;
-		if(Physics.Raycast(ShootPoint.position,ShootPoint.forward,out hit)){
-			Instantiate(hitEffect,hit.point,Quaternion.LookRotation(hit.normal,Vector3.up));
-		}
+		Transform bullet = (Transform)Instantiate (_bullet, ShootPoint.position, ShootPoint.rotation);
+		bullet.SendMessage ("Init", _weaponController);
 	}
 }
