@@ -17,14 +17,13 @@ public class Inventory : NetworkBehaviour {
 	
 	[SyncVar]
 	private int _syncSlot;//Selected slot
-
+	
 	private int _input;
 
 	private int _lastSlot = -1;
 
 	private bool _holster = false;
-
-
+	
 	public void GiveItem(PickupInfo itemInfo){
 		if (hasAuthority) {
 			//Create all slots if not created yet
@@ -78,7 +77,7 @@ public class Inventory : NetworkBehaviour {
 				_availableItems [_slots [_currentSlot]].Deselect ();
 			}
 		} else {
-			if (_slots.Count > 0 && _currentSlot < _slots.Count && _availableItems [_slots [_currentSlot]]) {
+			if ( _slots.Count > 0 && _currentSlot < _slots.Count && _availableItems [_slots [_currentSlot]]) {
 				//Disabling last item
 				if (_lastSlot >= 0 && _lastSlot != _currentSlot) {
 					if (_availableItems [_slots [_lastSlot]].selected) {

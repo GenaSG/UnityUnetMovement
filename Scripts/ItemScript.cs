@@ -13,6 +13,8 @@ public class ItemScript : MonoBehaviour {
 	public Transform ShootPoint;
 	public float FireTime = 0.1f;
 	private float _lastFireTime = 0;
+	private Vector3 _startPos;
+	private Quaternion _startRot;
 
 
 
@@ -26,7 +28,6 @@ public class ItemScript : MonoBehaviour {
 			animator.SetInteger ("AnimationType", AnimationType);
 			animator.SetBool ("Holster", false);
 			gameObject.SetActive (true);
-			Debug.Log ("Selecting");
 		}
 	}
 
@@ -34,7 +35,6 @@ public class ItemScript : MonoBehaviour {
 		if (animator.GetBool ("Holstered")) {
 			selected = false;
 			gameObject.SetActive (false);
-			Debug.Log ("Deselecting");
 		} else {
 			animator.SetInteger ("AnimationType", -1);
 			animator.SetBool ("Holster",true);
@@ -47,8 +47,9 @@ public class ItemScript : MonoBehaviour {
 	}
 	
 	// Update is called once per frame
-	void Update () {
-	
+	void LateUpdate () {
+		_startPos = ShootPoint.position;
+		_startRot = ShootPoint.rotation;
 	}
 
 	public bool Fire1(){
@@ -61,9 +62,15 @@ public class ItemScript : MonoBehaviour {
 		}
 
 	}
-	public void Shoot(){
+
+	public BulletScript PrepareBullet(){
+		Transform bullet = (Transform)Instantiate (_bullet, _startPos, _startRot);
+		return bullet.GetComponent<BulletScript> ();
+
+	}
+
+	public void Shoot(bool isOwner,byte shotID,BulletScript bullet ){
 		ShootPoint.SendMessage ("Play", SendMessageOptions.DontRequireReceiver);
-		Transform bullet = (Transform)Instantiate (_bullet, ShootPoint.position, ShootPoint.rotation);
-		bullet.SendMessage ("Init", _weaponController);
+		bullet.Shoot (_weaponController, isOwner,shotID);
 	}
 }
