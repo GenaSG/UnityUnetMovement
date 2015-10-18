@@ -1,0 +1,155 @@
+fileFormatVersion: 2
+guid: fb2e1c3a090f46041b7a04dbfc2ff902
+ModelImporter:
+  serializedVersion: 16
+  fileIDToRecycleName:
+    100000: Weapon_Beretta92_Imp02
+    100002: Weapon_Beretta92_Body02
+    100004: Weapon_Beretta92_Body01
+    100006: //RootNode
+    100008: Weapon_Beretta92_Imp01
+    100010: Weapon_Beretta92_Body01_LOD0
+    100012: Weapon_Beretta92_Body01_LOD1
+    100014: Weapon_Beretta92_Body02_LOD0
+    100016: Weapon_Beretta92_Body02_LOD1
+    100018: Weapon_Beretta92_Imp01_LOD0
+    100020: Weapon_Beretta92_Imp01_LOD1
+    100022: Weapon_Beretta92_Imp02_LOD0
+    100024: Weapon_Beretta92_Imp02_LOD1
+    100026: Pistol01_Body01
+    100028: Pistol01_Imp01
+    100030: Pistol01_Imp02
+    400000: Weapon_Beretta92_Imp02
+    400002: Weapon_Beretta92_Body02
+    400004: Weapon_Beretta92_Body01
+    400006: //RootNode
+    400008: Weapon_Beretta92_Imp01
+    400010: Weapon_Beretta92_Body01_LOD0
+    400012: Weapon_Beretta92_Body01_LOD1
+    400014: Weapon_Beretta92_Body02_LOD0
+    400016: Weapon_Beretta92_Body02_LOD1
+    400018: Weapon_Beretta92_Imp01_LOD0
+    400020: Weapon_Beretta92_Imp01_LOD1
+    400022: Weapon_Beretta92_Imp02_LOD0
+    400024: Weapon_Beretta92_Imp02_LOD1
+    400026: Pistol01_Body01
+    400028: Pistol01_Imp01
+    400030: Pistol01_Imp02
+    2300000: Weapon_Beretta92_Imp02
+    2300002: Weapon_Beretta92_Body02
+    2300004: Weapon_Beretta92_Body01
+    2300006: Weapon_Beretta92_Imp01
+    2300008: Weapon_Beretta92_Body01_LOD0
+    2300010: Weapon_Beretta92_Body01_LOD1
+    2300012: Weapon_Beretta92_Body02_LOD0
+    2300014: Weapon_Beretta92_Body02_LOD1
+    2300016: Weapon_Beretta92_Imp01_LOD0
+    2300018: Weapon_Beretta92_Imp01_LOD1
+    2300020: Weapon_Beretta92_Imp02_LOD0
+    2300022: Weapon_Beretta92_Imp02_LOD1
+    2300024: Pistol01_Body01
+    2300026: Pistol01_Imp01
+    2300028: Pistol01_Imp02
+    3300000: Weapon_Beretta92_Imp02
+    3300002: Weapon_Beretta92_Body02
+    3300004: Weapon_Beretta92_Body01
+    3300006: Weapon_Beretta92_Imp01
+    3300008: Weapon_Beretta92_Body01_LOD0
+    3300010: Weapon_Beretta92_Body01_LOD1
+    3300012: Weapon_Beretta92_Body02_LOD0
+    3300014: Weapon_Beretta92_Body02_LOD1
+    3300016: Weapon_Beretta92_Imp01_LOD0
+    3300018: Weapon_Beretta92_Imp01_LOD1
+    3300020: Weapon_Beretta92_Imp02_LOD0
+    3300022: Weapon_Beretta92_Imp02_LOD1
+    3300024: Pistol01_Body01
+    3300026: Pistol01_Imp01
+    3300028: Pistol01_Imp02
+    4300000: Weapon_Beretta92_Body01
+    4300002: Weapon_Beretta92_Imp01
+    4300004: Weapon_Beretta92_Imp02
+    4300006: Weapon_Beretta92_Body02
+    4300008: Weapon_Beretta92_Body01_LOD1
+    4300010: Weapon_Beretta92_Imp01_LOD1
+    4300012: Weapon_Beretta92_Imp02_LOD1
+    4300014: Weapon_Beretta92_Body02_LOD1
+    4300016: Weapon_Beretta92_Body01_LOD0
+    4300018: Weapon_Beretta92_Imp01_LOD0
+    4300020: Weapon_Beretta92_Imp02_LOD0
+    4300022: Weapon_Beretta92_Body02_LOD0
+    4300024: Pistol01_Body01
+    4300026: Pistol01_Imp01
+    4300028: Pistol01_Imp02
+    6400000: Weapon_Beretta92_Body01
+    6400002: Weapon_Beretta92_Body02
+    6400004: Weapon_Beretta92_Imp01
+    6400006: Weapon_Beretta92_Imp02
+    6400008: Weapon_Beretta92_Body01_LOD0
+    6400010: Weapon_Beretta92_Body01_LOD1
+    6400012: Weapon_Beretta92_Body02_LOD0
+    6400014: Weapon_Beretta92_Body02_LOD1
+    6400016: Weapon_Beretta92_Imp01_LOD0
+    6400018: Weapon_Beretta92_Imp01_LOD1
+    6400020: Weapon_Beretta92_Imp02_LOD0
+    6400022: Weapon_Beretta92_Imp02_LOD1
+    6400024: Pistol01_Body01
+    6400026: Pistol01_Imp01
+    6400028: Pistol01_Imp02
+    11100000: //RootNode
+    20500000: //RootNode
+  materials:
+    importMaterials: 1
+    materialName: 1
+    materialSearch: 2
+  animations:
+    legacyGenerateAnimations: 0
+    bakeSimulation: 0
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationCompression: 1
+    animationRotationError: .5
+    animationPositionError: .5
+    animationScaleError: .5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages:
+    - .25
+    - .00999999978
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    importBlendShapes: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+  tangentSpace:
+    normalSmoothAngle: 60
+    splitTangentsAcrossUV: 1
+    normalImportMode: 0
+    tangentImportMode: 1
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: .5
+    foreArmTwist: .5
+    upperLegTwist: .5
+    legTwist: .5
+    armStretch: .0500000007
+    legStretch: .0500000007
+    feetSpacing: 0
+    rootMotionBoneName: 
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  additionalBone: 1
+  userData: 

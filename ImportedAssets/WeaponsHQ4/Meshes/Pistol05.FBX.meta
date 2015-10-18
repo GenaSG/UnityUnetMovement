@@ -1,0 +1,114 @@
+fileFormatVersion: 2
+guid: 38068f92fcc97d0449b32f04f5643d62
+ModelImporter:
+  serializedVersion: 18
+  fileIDToRecycleName:
+    100000: //RootNode
+    100002: Weapon_SS_P250_Body02
+    100004: Weapon_SS_P250_Imp02
+    100006: Weapon_SS_P250_Imp01
+    100008: Weapon_SS_P250_Body01
+    100010: Pistol05_Body01
+    100012: Pistol05_Imp01
+    100014: Pistol05_Imp02
+    400000: //RootNode
+    400002: Weapon_SS_P250_Body02
+    400004: Weapon_SS_P250_Imp02
+    400006: Weapon_SS_P250_Imp01
+    400008: Weapon_SS_P250_Body01
+    400010: Pistol05_Body01
+    400012: Pistol05_Imp01
+    400014: Pistol05_Imp02
+    2300000: Weapon_SS_P250_Body02
+    2300002: Weapon_SS_P250_Imp02
+    2300004: Weapon_SS_P250_Imp01
+    2300006: Weapon_SS_P250_Body01
+    2300008: Pistol05_Body01
+    2300010: Pistol05_Imp01
+    2300012: Pistol05_Imp02
+    3300000: Weapon_SS_P250_Body02
+    3300002: Weapon_SS_P250_Imp02
+    3300004: Weapon_SS_P250_Imp01
+    3300006: Weapon_SS_P250_Body01
+    3300008: Pistol05_Body01
+    3300010: Pistol05_Imp01
+    3300012: Pistol05_Imp02
+    4300000: Weapon_SS_P250_Body02
+    4300002: Weapon_SS_P250_Imp02
+    4300004: Weapon_SS_P250_Body01
+    4300006: Weapon_SS_P250_Imp01
+    4300008: Pistol05_Imp02
+    4300010: Pistol05_Body01
+    4300012: Pistol05_Imp01
+    6400000: Weapon_SS_P250_Body01
+    6400002: Weapon_SS_P250_Body02
+    6400004: Weapon_SS_P250_Imp01
+    6400006: Weapon_SS_P250_Imp02
+    6400008: Pistol05_Body01
+    6400010: Pistol05_Imp01
+    6400012: Pistol05_Imp02
+    11100000: //RootNode
+  materials:
+    importMaterials: 1
+    materialName: 1
+    materialSearch: 2
+  animations:
+    legacyGenerateAnimations: 0
+    bakeSimulation: 0
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    animationCompression: 1
+    animationRotationError: .5
+    animationPositionError: .5
+    animationScaleError: .5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1.20000005
+    meshCompression: 0
+    addColliders: 0
+    importBlendShapes: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 0
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    splitTangentsAcrossUV: 1
+    normalImportMode: 0
+    tangentImportMode: 1
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: .5
+    foreArmTwist: .5
+    upperLegTwist: .5
+    legTwist: .5
+    armStretch: .0500000007
+    legStretch: .0500000007
+    feetSpacing: 0
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

@@ -1,0 +1,116 @@
+fileFormatVersion: 2
+guid: f4dbdee96841a8a4eae3ac78793bd991
+ModelImporter:
+  serializedVersion: 16
+  fileIDToRecycleName:
+    100000: Weapon_HK-4_Imp02
+    100002: Weapon_HK-4_Body01
+    100004: //RootNode
+    100006: Weapon_HK-4_Imp01
+    100008: Weapon_HK-4_Body01_LOD1
+    100010: Weapon_HK-4_Imp01_LOD1
+    100012: Weapon_HK-4_Imp02_LOD1
+    100014: Pistol03_Body01
+    100016: Pistol03_Imp01
+    100018: Pistol03_Imp02
+    400000: Weapon_HK-4_Imp02
+    400002: Weapon_HK-4_Body01
+    400004: //RootNode
+    400006: Weapon_HK-4_Imp01
+    400008: Weapon_HK-4_Body01_LOD1
+    400010: Weapon_HK-4_Imp01_LOD1
+    400012: Weapon_HK-4_Imp02_LOD1
+    400014: Pistol03_Body01
+    400016: Pistol03_Imp01
+    400018: Pistol03_Imp02
+    2300000: Weapon_HK-4_Body01
+    2300002: Weapon_HK-4_Imp02
+    2300004: Weapon_HK-4_Imp01
+    2300006: Weapon_HK-4_Body01_LOD1
+    2300008: Weapon_HK-4_Imp01_LOD1
+    2300010: Weapon_HK-4_Imp02_LOD1
+    2300012: Pistol03_Body01
+    2300014: Pistol03_Imp01
+    2300016: Pistol03_Imp02
+    3300000: Weapon_HK-4_Body01
+    3300002: Weapon_HK-4_Imp02
+    3300004: Weapon_HK-4_Imp01
+    3300006: Weapon_HK-4_Body01_LOD1
+    3300008: Weapon_HK-4_Imp01_LOD1
+    3300010: Weapon_HK-4_Imp02_LOD1
+    3300012: Pistol03_Body01
+    3300014: Pistol03_Imp01
+    3300016: Pistol03_Imp02
+    4300000: Weapon_HK-4_Body01
+    4300002: Weapon_HK-4_Imp01
+    4300004: Weapon_HK-4_Imp02
+    4300006: Weapon_HK-4_Body01_LOD1
+    4300008: Weapon_HK-4_Imp02_LOD1
+    4300010: Weapon_HK-4_Imp01_LOD1
+    4300012: Pistol03_Imp01
+    4300014: Pistol03_Body01
+    4300016: Pistol03_Imp02
+    6400000: Weapon_HK-4_Body01
+    6400002: Weapon_HK-4_Imp02
+    6400004: Weapon_HK-4_Imp01
+    6400006: Weapon_HK-4_Body01_LOD1
+    6400008: Weapon_HK-4_Imp01_LOD1
+    6400010: Weapon_HK-4_Imp02_LOD1
+    6400012: Pistol03_Body01
+    6400014: Pistol03_Imp01
+    6400016: Pistol03_Imp02
+    11100000: //RootNode
+  materials:
+    importMaterials: 1
+    materialName: 1
+    materialSearch: 2
+  animations:
+    legacyGenerateAnimations: 0
+    bakeSimulation: 0
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationCompression: 1
+    animationRotationError: .5
+    animationPositionError: .5
+    animationScaleError: .5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    importBlendShapes: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+  tangentSpace:
+    normalSmoothAngle: 60
+    splitTangentsAcrossUV: 1
+    normalImportMode: 0
+    tangentImportMode: 1
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: .5
+    foreArmTwist: .5
+    upperLegTwist: .5
+    legTwist: .5
+    armStretch: .0500000007
+    legStretch: .0500000007
+    feetSpacing: 0
+    rootMotionBoneName: 
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  additionalBone: 0
+  userData: 
