@@ -89,6 +89,13 @@ public class NetworkMovement : NetworkBehaviour {
 		_results.rotation = rotation;
 	}
 
+	void Start()
+	{
+		// Set start position to instantiate position instead of 0,0,0
+		_results.position = transform.position;
+		_results.rotation = transform.rotation;
+	}
+
 	void Update(){
 		if (isLocalPlayer) {
 			//Getting clients inputs
@@ -150,7 +157,8 @@ public class NetworkMovement : NetworkBehaviour {
 				}else{
 					if(Quaternion.Angle(_results.rotation,lastRotation) > 0){
 						Cmd_RotationInputs(_inputs.pitch,_inputs.yaw,_inputs.crouch,_inputs.timeStamp);
-					}else{
+					}else if (_results.crouching != lastCrouch) {
+						// Don't spam the server unless there's something to tell
 						Cmd_OnlyStances(_inputs.crouch,_inputs.timeStamp);
 					}
 				}
